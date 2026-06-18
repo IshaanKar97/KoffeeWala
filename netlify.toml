@@ -1,0 +1,17 @@
+# Netlify deploy configuration for the Coffee Brewing Calculator (Vite SPA).
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Pin a stable LTS for reproducible builds (Vite 6 needs Node 18+).
+  NODE_VERSION = "20"
+
+# Single-page app fallback: serve index.html for any path so client-side
+# routing/deep links resolve. Harmless for the current single-view app and
+# ready if routes are added later.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,25 @@
+{
+  "name": "coffee-brewing-calculator",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Scale-based pour-over calculator for V60 (No Ice / With Ice) and South Indian Filter Coffee.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.1.13",
+    "vite": "^6.3.5",
+    "vitest": "^2.1.9"
+  }
+}
