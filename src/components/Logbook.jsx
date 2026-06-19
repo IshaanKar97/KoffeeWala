@@ -34,6 +34,8 @@ function BrewCard({ brew }) {
     brew.totalWater != null && `${brew.totalWater} g water`,
     brew.ice != null && `${brew.ice} g ice`,
     brew.milk != null && `${brew.milk} g milk`,
+    brew.waterTemp && brew.waterTemp,
+    brew.grindSize && `grind ${brew.grindSize}`,
   ].filter(Boolean)
   return (
     <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">

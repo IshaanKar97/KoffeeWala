@@ -40,6 +40,9 @@ const DEFAULT_STATE = {
   milkRatio: '3',
   bloom: '',
   bloomTime: '00:30',
+  grind: '14 clicks',
+  tempOn: false,
+  waterTempC: '95',
 }
 const loadState = () => {
   try {
@@ -69,6 +72,9 @@ export default function App() {
   const [milkRatio, setMilkRatio] = useState(saved.milkRatio)
   const [bloom, setBloom] = useState(saved.bloom)
   const [bloomTime, setBloomTime] = useState(saved.bloomTime)
+  const [grind, setGrind] = useState(saved.grind)
+  const [tempOn, setTempOn] = useState(saved.tempOn)
+  const [waterTempC, setWaterTempC] = useState(saved.waterTempC)
   const [copied, setCopied] = useState(false)
   const [rating, setRating] = useState('')
   const [notes, setNotes] = useState('')
@@ -96,13 +102,13 @@ export default function App() {
 
   // Persist inputs across sessions.
   useEffect(() => {
-    const state = { mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime }
+    const state = { mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime, grind, tempOn, waterTempC }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } catch {
       /* ignore storage failures (private mode, quota) */
     }
-  }, [mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime])
+  }, [mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime, grind, tempOn, waterTempC])
 
   const resetDefaults = () => {
     setDose(DEFAULT_STATE.dose)
@@ -112,6 +118,9 @@ export default function App() {
     setMilkRatio(DEFAULT_STATE.milkRatio)
     setBloom(DEFAULT_STATE.bloom)
     setBloomTime(DEFAULT_STATE.bloomTime)
+    setGrind(DEFAULT_STATE.grind)
+    setTempOn(DEFAULT_STATE.tempOn)
+    setWaterTempC(DEFAULT_STATE.waterTempC)
   }
 
   const copyRecipe = async () => {
@@ -180,6 +189,8 @@ export default function App() {
       payload.pour3Water = result.steps[3]?.cumulative
       payload.pour2Time = timer.laps.pour2 || undefined
       payload.pour3Time = timer.laps.pour3 || undefined
+      payload.grindSize = grind || undefined
+      if (tempOn && String(waterTempC).trim() !== '') payload.waterTemp = `${waterTempC}°C`
     }
     return payload
   }
@@ -294,6 +305,45 @@ export default function App() {
                   className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
                 />
               </label>
+
+              {mode !== 'filter' && (
+                <>
+                  <label className="block">
+                    <span className="block text-sm font-medium text-stone-700">Grind size</span>
+                    <input
+                      type="text"
+                      value={grind}
+                      onChange={(e) => setGrind(e.target.value)}
+                      placeholder="e.g. 14 clicks"
+                      className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                    />
+                  </label>
+
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+                      <input
+                        type="checkbox"
+                        checked={tempOn}
+                        onChange={(e) => setTempOn(e.target.checked)}
+                        className="h-4 w-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
+                      />
+                      Record water temp
+                    </label>
+                    {tempOn && (
+                      <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30">
+                        <input
+                          type="number"
+                          value={waterTempC}
+                          onChange={(e) => setWaterTempC(e.target.value)}
+                          onWheel={(e) => e.currentTarget.blur()}
+                          className="w-full rounded-lg bg-transparent px-3 py-2 outline-none"
+                        />
+                        <span className="px-3 text-sm text-stone-500">°C</span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </section>
 

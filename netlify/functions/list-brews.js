@@ -44,6 +44,8 @@ export const handler = async () => {
         milk: numv(pr['Milk (g)']),
         rating: numv(pr['Rating /10']),
         notes: txt(pr['Tasting Notes']),
+        grindSize: txt(pr['Grind Size']),
+        waterTemp: txt(pr['Water Temp']),
         bloomTime: txt(pr['Bloom Time']),
         pour1Time: txt(pr['Pour 1 Time']),
         pour2Time: txt(pr['Pour 2 Time']),

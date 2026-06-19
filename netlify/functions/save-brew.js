@@ -55,6 +55,7 @@ export const handler = async (event) => {
   set('Pour 3 Time', richText(data.pour3Time))
   set('Drawdown Time', richText(data.drawdownTime))
   set('Water Temp', richText(data.waterTemp))
+  set('Grind Size', richText(data.grindSize))
   set('Rating /10', number(data.rating))
   set('Tasting Notes', richText(data.notes))
   if (data.date) set('Date', { date: { start: data.date } })
