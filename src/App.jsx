@@ -190,8 +190,9 @@ export default function App() {
       payload.pour2Time = timer.laps.pour2 || undefined
       payload.pour3Time = timer.laps.pour3 || undefined
       payload.grindSize = grind || undefined
-      if (tempOn && String(waterTempC).trim() !== '') payload.waterTemp = `${waterTempC}°C`
     }
+    // Water temp (optional toggle) applies to all modes, incl. Filter.
+    if (tempOn && String(waterTempC).trim() !== '') payload.waterTemp = `${waterTempC}°C`
     return payload
   }
 
@@ -307,43 +308,41 @@ export default function App() {
               </label>
 
               {mode !== 'filter' && (
-                <>
-                  <label className="block">
-                    <span className="block text-sm font-medium text-stone-700">Grind size</span>
-                    <input
-                      type="text"
-                      value={grind}
-                      onChange={(e) => setGrind(e.target.value)}
-                      placeholder="e.g. 14 clicks"
-                      className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
-                    />
-                  </label>
-
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
-                      <input
-                        type="checkbox"
-                        checked={tempOn}
-                        onChange={(e) => setTempOn(e.target.checked)}
-                        className="h-4 w-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
-                      />
-                      Record water temp
-                    </label>
-                    {tempOn && (
-                      <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30">
-                        <input
-                          type="number"
-                          value={waterTempC}
-                          onChange={(e) => setWaterTempC(e.target.value)}
-                          onWheel={(e) => e.currentTarget.blur()}
-                          className="w-full rounded-lg bg-transparent px-3 py-2 outline-none"
-                        />
-                        <span className="px-3 text-sm text-stone-500">°C</span>
-                      </div>
-                    )}
-                  </div>
-                </>
+                <label className="block">
+                  <span className="block text-sm font-medium text-stone-700">Grind size</span>
+                  <input
+                    type="text"
+                    value={grind}
+                    onChange={(e) => setGrind(e.target.value)}
+                    placeholder="e.g. 14 clicks"
+                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                  />
+                </label>
               )}
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={tempOn}
+                    onChange={(e) => setTempOn(e.target.checked)}
+                    className="h-4 w-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
+                  />
+                  Record water temp
+                </label>
+                {tempOn && (
+                  <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30">
+                    <input
+                      type="number"
+                      value={waterTempC}
+                      onChange={(e) => setWaterTempC(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      className="w-full rounded-lg bg-transparent px-3 py-2 outline-none"
+                    />
+                    <span className="px-3 text-sm text-stone-500">°C</span>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
