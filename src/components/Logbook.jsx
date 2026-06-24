@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listBrews, updateBrew } from '../lib/logbook.js'
+import { listBrews, updateBrew, deleteBrew } from '../lib/logbook.js'
 
 const METHOD_COLOR = {
   'V60 - No Ice': 'bg-blue-100 text-blue-800',
@@ -89,6 +89,7 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
   const [initial, setInitial] = useState('')
   const [saveState, setSaveState] = useState('idle') // idle | saving | error
   const [saveError, setSaveError] = useState('')
+  const [deleteState, setDeleteState] = useState('idle') // idle | deleting | error
 
   const startEdit = () => {
     const f = {}
@@ -135,6 +136,21 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
     }
   }
 
+  // Delete is permanent (PRD: hard delete + confirmation; soft-delete deferred).
+  const remove = async () => {
+    if (!window.confirm('Delete this brew permanently? This cannot be undone.')) return
+    setDeleteState('deleting')
+    setSaveError('')
+    try {
+      await deleteBrew(brew.id)
+      onClose()
+      onSaved()
+    } catch (e) {
+      setSaveError(e.message)
+      setDeleteState('error')
+    }
+  }
+
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -147,6 +163,9 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
             <>
               <button onClick={startEdit} className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 hover:border-amber-600 hover:text-amber-800">
                 Edit
+              </button>
+              <button onClick={remove} disabled={deleteState === 'deleting'} className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:border-red-500 hover:bg-red-50 disabled:opacity-50">
+                {deleteState === 'deleting' ? 'Deleting…' : 'Delete'}
               </button>
               <button onClick={() => onRebrew(brew)} className="rounded-lg bg-amber-700 px-3 py-1 text-xs font-medium text-white hover:bg-amber-800">
                 Re-brew
@@ -164,6 +183,8 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
           )}
         </div>
       </div>
+
+      {deleteState === 'error' && <p className="mb-3 text-sm text-red-600">{saveError}</p>}
 
       {!editing ? (
         <>
@@ -303,7 +324,7 @@ export default function Logbook({ onRebrew }) {
         </button>
       </div>
 
-      {status === 'loading' && <p className="text-sm text-stone-500">Loading brews from Notion…</p>}
+      {status === 'loading' && <p className="text-sm text-stone-500">Loading your brews…</p>}
 
       {status === 'error' && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
