@@ -4,14 +4,9 @@
   command = "npm run build"
   publish = "dist"
 
-[functions]
-  # Server-side Notion sync proxy (holds NOTION_TOKEN; never bundled to client).
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
 [dev]
-  # `netlify dev` runs Vite (targetPort) and serves the app + functions on `port`.
-  # Use this (not plain `vite`) so the Logbook's functions work locally.
+  # Phase 2 talks to Supabase directly from the browser (no serverless proxy),
+  # so plain `npm run dev` works too; `netlify dev` is kept for parity with prod.
   framework = "#custom"
   command = "npm run dev"
   targetPort = 5173
