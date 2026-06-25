@@ -33,12 +33,17 @@ const FIELDS = [
   { key: 'notes', label: 'Tasting notes', type: 'textarea' },
 ]
 
-// Map the edit form (brew shape) → the save/update payload keys.
-function formToPayload(id, f) {
+// Map the edit form (brew shape) → the update payload. Instrument / method /
+// ice / the full pour array are preserved from the original brew (the edit form
+// only exposes pour 1-3, which are locked); the full detail/edit rework is Task 7.
+function formToPayload(id, f, brew) {
   return {
     id,
+    instrument: brew.instrument,
+    method: brew.methodId,
+    withIce: brew.withIce,
+    pours: brew.pours,
     brewName: f.name,
-    brewMethod: f.method,
     date: f.date,
     coffee: f.coffee,
     ratio: f.ratio,
@@ -46,14 +51,12 @@ function formToPayload(id, f) {
     bloomWater: f.bloomWater,
     brewWater: f.brewWater,
     ice: f.ice,
+    iceFactor: brew.iceFactor,
     milk: f.milk,
-    pour1Water: f.pour1Water,
-    pour2Water: f.pour2Water,
-    pour3Water: f.pour3Water,
+    milkRatio: brew.milkRatio,
+    dilutionRatio: brew.dilutionRatio,
+    dilutionWater: brew.dilutionWater,
     bloomTimeStr: f.bloomTime,
-    pour1Time: f.pour1Time,
-    pour2Time: f.pour2Time,
-    pour3Time: f.pour3Time,
     drawdownTime: f.drawdownTime,
     grindSize: f.grindSize,
     waterTemp: f.waterTemp,
@@ -126,7 +129,7 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
     setSaveState('saving')
     setSaveError('')
     try {
-      await updateBrew(formToPayload(brew.id, form))
+      await updateBrew(formToPayload(brew.id, form, brew))
       setEditing(false)
       setSaveState('idle')
       onSaved()

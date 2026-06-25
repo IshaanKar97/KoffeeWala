@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { calculate, defaultBloom } from './lib/calculations.js'
+import { calculate, defaultBloom, DEFAULTS, V60_POURS } from './lib/calculations.js'
 import Field from './components/Field.jsx'
 import { useBrewTimer, fmt } from './lib/useBrewTimer.js'
 import { saveBrew } from './lib/logbook.js'
@@ -7,40 +7,66 @@ import Logbook from './components/Logbook.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 
-const MODES = [
-  { id: 'v60-no-ice', label: 'V60 — No Ice' },
-  { id: 'v60-ice', label: 'V60 — With Ice' },
+// Instrument × Brewing Method model (PRD §3.1). Mokka-Pot is a disabled
+// "coming soon" placeholder — no calc/DB/logic in Phase 2.
+const INSTRUMENTS = [
+  { id: 'v60', label: 'V60' },
   { id: 'filter', label: 'Filter Coffee' },
+  { id: 'mokka', label: 'Mokka-Pot', disabled: true },
 ]
+const V60_METHODS = [
+  { id: '1-pour', label: '1-Pour' },
+  { id: '3-pour', label: '3-Pour' },
+  { id: '10-pour', label: '10-Pour' },
+  { id: 'advanced', label: 'Advanced' },
+]
+const FILTER_METHODS = [
+  { id: 'with-milk', label: 'With Milk' },
+  { id: 'with-water', label: 'With Water' },
+]
+const METHOD_LABEL = {
+  '1-pour': '1-Pour',
+  '3-pour': '3-Pour',
+  '10-pour': '10-Pour',
+  advanced: 'Advanced',
+  'with-milk': 'With Milk',
+  'with-water': 'With Water',
+}
 
-// Lap-able steps per mode (PRD §6.6) + the Recipe Logbook column each fills.
-function lapStepsFor(mode) {
-  if (mode === 'filter') {
+// Lap-able timer steps for the current brew. The terminal step is not lapped
+// manually — stopping the timer records its time (PRD §6.6).
+function lapStepsFor(instrument, pourCount) {
+  if (instrument === 'filter') {
     return [
-      { key: 'bloom', label: 'Bloom', logCol: 'Bloom Time' },
-      { key: 'pour1', label: 'Main pour', logCol: 'Pour 1 Time' },
-      { key: 'drawdown', label: 'Drawdown end', logCol: 'Drawdown Time' },
+      { key: 'bloom', label: 'Bloom' },
+      { key: 'pour1', label: 'Main pour' },
+      { key: 'drawdown', label: 'Drawdown end' },
     ]
   }
-  return [
-    { key: 'bloom', label: 'Bloom', logCol: 'Bloom Time' },
-    { key: 'pour1', label: 'Pour 1', logCol: 'Pour 1 Time' },
-    { key: 'pour2', label: 'Pour 2', logCol: 'Pour 2 Time' },
-    { key: 'pour3', label: 'Pour 3', logCol: 'Pour 3 Time' },
-  ]
+  const steps = [{ key: 'bloom', label: 'Bloom' }]
+  for (let i = 1; i <= pourCount; i++) steps.push({ key: `pour${i}`, label: `Pour ${i}` })
+  return steps
 }
 
 const num = (s) => (s == null || String(s).trim() === '' ? undefined : parseFloat(s))
+const round2 = (x) => Math.round(x * 100) / 100
 
-const STORAGE_KEY = 'cbc-state-v1'
+const STORAGE_KEY = 'cbc-state-v2'
 const DEFAULT_STATE = {
-  mode: 'v60-no-ice',
+  instrument: 'v60',
+  v60Method: '3-pour',
+  filterMethod: 'with-milk',
   dose: '20',
   ratio: '16',
+  iceOn: false,
   iceFactor: '0.4',
+  advTotal: '',
+  advBloom: '',
+  advNPours: '3',
   waterRatio: '5',
   milkRatio: '3',
-  bloom: '',
+  dilutionRatio: '4',
+  filterBloom: '',
   bloomTime: '00:30',
   grind: '14 clicks',
   tempOn: false,
@@ -66,13 +92,20 @@ function Stat({ label, value, accent = false }) {
 export default function App() {
   const saved = useMemo(loadState, [])
   const [view, setView] = useState('calculator') // calculator | logbook
-  const [mode, setMode] = useState(saved.mode)
+  const [instrument, setInstrument] = useState(saved.instrument)
+  const [v60Method, setV60Method] = useState(saved.v60Method)
+  const [filterMethod, setFilterMethod] = useState(saved.filterMethod)
   const [dose, setDose] = useState(saved.dose)
   const [ratio, setRatio] = useState(saved.ratio)
+  const [iceOn, setIceOn] = useState(saved.iceOn)
   const [iceFactor, setIceFactor] = useState(saved.iceFactor)
+  const [advTotal, setAdvTotal] = useState(saved.advTotal)
+  const [advBloom, setAdvBloom] = useState(saved.advBloom)
+  const [advNPours, setAdvNPours] = useState(saved.advNPours)
   const [waterRatio, setWaterRatio] = useState(saved.waterRatio)
   const [milkRatio, setMilkRatio] = useState(saved.milkRatio)
-  const [bloom, setBloom] = useState(saved.bloom)
+  const [dilutionRatio, setDilutionRatio] = useState(saved.dilutionRatio)
+  const [filterBloom, setFilterBloom] = useState(saved.filterBloom)
   const [bloomTime, setBloomTime] = useState(saved.bloomTime)
   const [grind, setGrind] = useState(saved.grind)
   const [tempOn, setTempOn] = useState(saved.tempOn)
@@ -86,41 +119,70 @@ export default function App() {
   const { user, signOut } = useAuth()
   const [authOpen, setAuthOpen] = useState(false)
 
-  const lapSteps = useMemo(() => lapStepsFor(mode), [mode])
-  // The final step is not lapped manually — stopping the timer records its time.
+  const method = instrument === 'v60' ? v60Method : filterMethod
+  const isAdvanced = instrument === 'v60' && v60Method === 'advanced'
+  const isV60Preset = instrument === 'v60' && v60Method !== 'advanced'
+
+  // Number of pours after bloom — drives the timer rows (independent of validity).
+  const pourCount = useMemo(() => {
+    if (instrument === 'filter') return 1
+    if (v60Method === 'advanced') return Math.max(0, Math.trunc(num(advNPours) || 0))
+    return V60_POURS[v60Method]
+  }, [instrument, v60Method, advNPours])
+
+  const lapSteps = useMemo(() => lapStepsFor(instrument, pourCount), [instrument, pourCount])
   const terminalKey = lapSteps[lapSteps.length - 1].key
   const timer = useBrewTimer()
 
-  // Reset the timer + captured laps when the brew method changes.
+  // Reset the timer + captured laps when the brew shape changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => timer.clear(), [mode])
+  useEffect(() => timer.clear(), [instrument, v60Method, filterMethod, pourCount])
 
   const inputs = useMemo(() => {
-    const base = { dose: num(dose), bloom: num(bloom) }
-    if (mode === 'filter') return { ...base, waterRatio: num(waterRatio), milkRatio: num(milkRatio) }
-    if (mode === 'v60-ice') return { ...base, ratio: num(ratio), iceFactor: num(iceFactor) }
+    if (instrument === 'filter') {
+      return {
+        instrument: 'filter',
+        method: filterMethod,
+        dose: num(dose),
+        waterRatio: num(waterRatio),
+        milkRatio: num(milkRatio),
+        dilutionRatio: num(dilutionRatio),
+        bloom: num(filterBloom),
+      }
+    }
+    const base = { instrument: 'v60', method: v60Method, dose: num(dose), iceOn, iceFactor: num(iceFactor) }
+    if (v60Method === 'advanced') {
+      return { ...base, ratio: num(ratio), totalWater: num(advTotal), bloom: num(advBloom), nPours: num(advNPours) }
+    }
     return { ...base, ratio: num(ratio) }
-  }, [mode, dose, bloom, ratio, iceFactor, waterRatio, milkRatio])
+  }, [instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, filterBloom])
 
-  const result = useMemo(() => calculate(mode, inputs), [mode, inputs])
+  const result = useMemo(() => calculate(inputs), [inputs])
 
   // Persist inputs across sessions.
   useEffect(() => {
-    const state = { mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime, grind, tempOn, waterTempC }
+    const state = {
+      instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours,
+      waterRatio, milkRatio, dilutionRatio, filterBloom, bloomTime, grind, tempOn, waterTempC,
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } catch {
       /* ignore storage failures (private mode, quota) */
     }
-  }, [mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime, grind, tempOn, waterTempC])
+  }, [instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, filterBloom, bloomTime, grind, tempOn, waterTempC])
 
   const resetDefaults = () => {
-    setDose(DEFAULT_STATE.dose)
     setRatio(DEFAULT_STATE.ratio)
+    setIceOn(DEFAULT_STATE.iceOn)
     setIceFactor(DEFAULT_STATE.iceFactor)
+    setAdvTotal(DEFAULT_STATE.advTotal)
+    setAdvBloom(DEFAULT_STATE.advBloom)
+    setAdvNPours(DEFAULT_STATE.advNPours)
     setWaterRatio(DEFAULT_STATE.waterRatio)
     setMilkRatio(DEFAULT_STATE.milkRatio)
-    setBloom(DEFAULT_STATE.bloom)
+    setDilutionRatio(DEFAULT_STATE.dilutionRatio)
+    setFilterBloom(DEFAULT_STATE.filterBloom)
     setBloomTime(DEFAULT_STATE.bloomTime)
     setGrind(DEFAULT_STATE.grind)
     setTempOn(DEFAULT_STATE.tempOn)
@@ -129,19 +191,15 @@ export default function App() {
 
   const copyRecipe = async () => {
     if (!result.valid) return
-    const modeLabel = MODES.find((m) => m.id === mode).label
-    const lines = [`☕ ${modeLabel}`]
-    if (mode === 'filter') {
-      lines.push(`Dose ${num(dose)} g · water ratio ${num(waterRatio) ?? 5} · milk ratio ${num(milkRatio) ?? 3}`)
-      lines.push(`Total water ${result.total} g · Milk to serve ${result.milk} g`)
-    } else {
-      lines.push(`Dose ${num(dose)} g · ratio ${num(ratio) ?? 16}`)
-      if (mode === 'v60-ice') lines.push(`Total ${result.total} g · Ice ${result.ice} g · Brew ${result.brewWater} g`)
-      else lines.push(`Total water ${result.total} g`)
-    }
+    const lines = [`☕ ${instrument === 'v60' ? 'V60' : 'Filter Coffee'} — ${METHOD_LABEL[method]}${instrument === 'v60' && iceOn ? ' (Ice)' : ''}`]
+    lines.push(`Dose ${num(dose)} g`)
+    if (instrument === 'v60' && iceOn) lines.push(`Total ${result.total} g · Ice ${result.ice} g · Brew ${result.brewWater} g`)
+    else lines.push(`Total water ${result.total} g`)
+    if (instrument === 'filter' && filterMethod === 'with-milk') lines.push(`Milk to serve ${result.milk} g`)
+    if (instrument === 'filter' && filterMethod === 'with-water') lines.push(`Dilution water ${result.dilutionWater} g`)
     lines.push(`Bloom ${result.bloomWater} g (${bloomTime || '00:30'})`)
     lines.push('Pours (add → scale reads):')
-    result.steps.forEach((s) => lines.push(`  ${s.label}: +${s.add} → ${s.cumulative} g`))
+    result.steps.slice(1).forEach((s) => lines.push(`  ${s.label}: +${s.add} → ${s.cumulative} g`))
     const timed = lapSteps
       .map((ls) => {
         const t = ls.key === 'bloom' ? timer.laps.bloom || bloomTime : timer.laps[ls.key]
@@ -162,54 +220,58 @@ export default function App() {
   }
 
   const buildPayload = () => {
-    const methodMap = { 'v60-no-ice': 'V60 - No Ice', 'v60-ice': 'V60 - With Ice', filter: 'Filter Coffee' }
     const nowDate = new Date()
     const today = nowDate.toISOString().slice(0, 10)
     const hhmm = nowDate.toTimeString().slice(0, 5)
-    const modeLabel = MODES.find((m) => m.id === mode).label
+    const instLabel = instrument === 'v60' ? 'V60' : 'Filter Coffee'
+    const iceTag = instrument === 'v60' && iceOn ? ' · Ice' : ''
     const payload = {
-      brewName: `${modeLabel} · ${num(dose)}g · ${today} ${hhmm}`,
-      brewMethod: methodMap[mode],
+      brewName: `${instLabel} ${METHOD_LABEL[method]}${iceTag} · ${num(dose)}g · ${today} ${hhmm}`,
+      instrument,
+      method,
+      withIce: instrument === 'v60' ? iceOn : false,
       coffee: num(dose),
       totalWater: result.total,
       bloomWater: result.bloomWater,
-      brewWater: result.target,
       bloomTimeStr: timer.laps.bloom || bloomTime || '00:30',
       date: today,
       rating: rating === '' ? undefined : Number(rating),
       notes: notes || undefined,
-      pour1Time: timer.laps.pour1 || undefined,
-      drawdownTime: timer.laps.drawdown || undefined,
+      // pours: cumulative scale reading + lap time, one per pour after the bloom.
+      pours: result.steps.slice(1).map((s, i) => ({ water: s.cumulative, time: timer.laps[`pour${i + 1}`] || undefined })),
     }
-    if (mode === 'filter') {
-      payload.ratio = num(waterRatio) ?? 5
-      payload.milk = result.milk
-      payload.pour1Water = result.steps[1]?.cumulative // main pour → Pour 1
-    } else {
-      payload.ratio = num(ratio) ?? 16
-      if (mode === 'v60-ice') payload.ice = result.ice
-      payload.pour1Water = result.steps[1]?.cumulative
-      payload.pour2Water = result.steps[2]?.cumulative
-      payload.pour3Water = result.steps[3]?.cumulative
-      payload.pour2Time = timer.laps.pour2 || undefined
-      payload.pour3Time = timer.laps.pour3 || undefined
+    if (instrument === 'v60') {
+      payload.ratio = num(ratio) ?? DEFAULTS.v60.ratio
+      payload.nPours = result.nPours
+      if (iceOn) {
+        payload.ice = result.ice
+        payload.iceFactor = result.iceFactor
+        payload.brewWater = result.brewWater
+      }
       payload.grindSize = grind || undefined
+    } else {
+      payload.ratio = num(waterRatio) ?? DEFAULTS.filter.waterRatio
+      if (filterMethod === 'with-milk') {
+        payload.milk = result.milk
+        payload.milkRatio = num(milkRatio) ?? DEFAULTS.filter.milkRatio
+      } else {
+        payload.dilutionRatio = result.dilutionRatio
+        payload.dilutionWater = result.dilutionWater
+      }
+      payload.drawdownTime = timer.laps.drawdown || undefined
     }
-    // Water temp (optional toggle) applies to all modes, incl. Filter.
     if (tempOn && String(waterTempC).trim() !== '') payload.waterTemp = `${waterTempC}°C`
     return payload
   }
 
   const handleSave = async () => {
     if (!result.valid) return
-    // Warn (don't save) if the timer is still running.
     if (timer.running) {
       setSaveError('The brew timer is still running — stop it before saving.')
       setSaveStatus('warn')
       return
     }
-    // Confirm before re-saving an unchanged brew (avoids accidental duplicate rows).
-    const sig = JSON.stringify({ mode, dose, ratio, iceFactor, waterRatio, milkRatio, bloom, bloomTime, laps: timer.laps, rating, notes })
+    const sig = JSON.stringify({ instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, filterBloom, bloomTime, laps: timer.laps, rating, notes })
     if (sig === lastSavedSig && !window.confirm('You already saved this brew. Save it again as a new Logbook entry?')) return
     setSaveStatus('saving')
     setSaveError('')
@@ -226,20 +288,31 @@ export default function App() {
 
   // Re-brew: load a logged brew's inputs back into the calculator.
   const reBrew = (brew) => {
-    const modeFromMethod = { 'V60 - No Ice': 'v60-no-ice', 'V60 - With Ice': 'v60-ice', 'Filter Coffee': 'filter' }
-    const m = modeFromMethod[brew.method] || 'v60-no-ice'
-    setMode(m)
+    const inst = brew.instrument === 'filter' ? 'filter' : 'v60'
+    setInstrument(inst)
     if (brew.coffee != null) setDose(String(brew.coffee))
-    if (m === 'filter') {
+    if (inst === 'filter') {
+      setFilterMethod(brew.methodId === 'with-water' ? 'with-water' : 'with-milk')
       if (brew.ratio != null) setWaterRatio(String(brew.ratio))
-      if (brew.milk != null && brew.coffee) setMilkRatio(String(Math.round((brew.milk / brew.coffee) * 100) / 100))
+      if (brew.milkRatio != null) setMilkRatio(String(brew.milkRatio))
+      else if (brew.milk != null && brew.coffee) setMilkRatio(String(round2(brew.milk / brew.coffee)))
+      if (brew.dilutionRatio != null) setDilutionRatio(String(brew.dilutionRatio))
+      if (brew.bloomWater != null) setFilterBloom(String(brew.bloomWater))
     } else {
+      const m = ['1-pour', '3-pour', '10-pour', 'advanced'].includes(brew.methodId) ? brew.methodId : '3-pour'
+      setV60Method(m)
+      setIceOn(!!brew.withIce)
+      if (brew.iceFactor != null) setIceFactor(String(brew.iceFactor))
       if (brew.ratio != null) setRatio(String(brew.ratio))
-      if (m === 'v60-ice' && brew.ice != null && brew.totalWater) setIceFactor(String(Math.round((brew.ice / brew.totalWater) * 100) / 100))
+      if (m === 'advanced') {
+        if (brew.bloomWater != null) setAdvBloom(String(brew.bloomWater))
+        if (brew.totalWater != null) setAdvTotal(String(brew.totalWater))
+        const n = Array.isArray(brew.pours) ? brew.pours.length : null
+        if (n) setAdvNPours(String(n))
+      }
     }
-    if (brew.bloomWater != null) setBloom(String(brew.bloomWater))
     if (brew.bloomTime) setBloomTime(brew.bloomTime)
-    if (brew.grindSize) setGrind(brew.grindSize)
+    if (inst === 'v60' && brew.grindSize) setGrind(brew.grindSize)
     if (brew.waterTemp) {
       setTempOn(true)
       const t = parseFloat(brew.waterTemp)
@@ -248,7 +321,8 @@ export default function App() {
     setView('calculator')
   }
 
-  const bloomPlaceholder = num(dose) > 0 ? `${defaultBloom(num(dose))} (default)` : '2 × dose'
+  const presetBloom = num(dose) > 0 ? `${defaultBloom(num(dose))} g` : '—'
+  const advBloomPlaceholder = num(dose) > 0 ? `${defaultBloom(num(dose))} (default)` : '2 × dose'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-100 to-stone-200 text-stone-900">
@@ -306,20 +380,62 @@ export default function App() {
 
         {view === 'calculator' && (
           <>
-            {/* Mode tabs */}
-            <div className="mb-6 inline-flex rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                mode === m.id ? 'bg-amber-700 text-white shadow' : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+            {/* Instrument selector */}
+            <div className="mb-3">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">Instrument</span>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
+                {INSTRUMENTS.map((ins) => (
+                  <button
+                    key={ins.id}
+                    onClick={() => !ins.disabled && setInstrument(ins.id)}
+                    disabled={ins.disabled}
+                    title={ins.disabled ? 'Coming soon' : undefined}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                      ins.disabled
+                        ? 'cursor-not-allowed text-stone-400'
+                        : instrument === ins.id
+                          ? 'bg-amber-700 text-white shadow'
+                          : 'text-stone-600 hover:text-stone-900'
+                    }`}
+                  >
+                    {ins.label}
+                    {ins.disabled && <span className="ml-1.5 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-stone-500">Soon</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Brewing method selector */}
+            <div className="mb-6">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">Brewing method</span>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
+                {(instrument === 'v60' ? V60_METHODS : FILTER_METHODS).map((m) => {
+                  const active = method === m.id
+                  const onSelect = instrument === 'v60' ? () => setV60Method(m.id) : () => setFilterMethod(m.id)
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={onSelect}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${active ? 'bg-amber-700 text-white shadow' : 'text-stone-600 hover:text-stone-900'}`}
+                    >
+                      {m.label}
+                    </button>
+                  )
+                })}
+                {/* Ice toggle — V60 only, applies to every method */}
+                {instrument === 'v60' && (
+                  <label className="ml-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={iceOn}
+                      onChange={(e) => setIceOn(e.target.checked)}
+                      className="h-4 w-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
+                    />
+                    Ice
+                  </label>
+                )}
+              </div>
+            </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Inputs */}
@@ -333,20 +449,40 @@ export default function App() {
             <div className="space-y-4">
               <Field label="Coffee dose" value={dose} onChange={setDose} suffix="g" placeholder="e.g. 20" />
 
-              {mode === 'filter' ? (
+              {instrument === 'filter' ? (
                 <>
-                  <Field label="Water ratio" value={waterRatio} onChange={setWaterRatio} suffix="×" hint="Total water = dose × ratio (default 5)" />
-                  <Field label="Milk ratio" value={milkRatio} onChange={setMilkRatio} suffix="×" hint="Milk to serve = dose × ratio (default 3)" />
+                  <Field label="Water ratio" value={waterRatio} onChange={setWaterRatio} suffix="×" hint="Decoction water = dose × ratio (default 5)" />
+                  {filterMethod === 'with-milk' ? (
+                    <Field label="Milk ratio" value={milkRatio} onChange={setMilkRatio} suffix="×" hint="Milk to serve = dose × ratio (default 3)" />
+                  ) : (
+                    <Field label="Water (dilution) ratio" value={dilutionRatio} onChange={setDilutionRatio} suffix="×" hint="Dilution water = dose × ratio (default 4)" />
+                  )}
+                  <Field label="Bloom water" value={filterBloom} onChange={setFilterBloom} suffix="g" placeholder={advBloomPlaceholder} hint="Leave blank to use 2 × dose" />
                 </>
               ) : (
-                <Field label="Ratio" value={ratio} onChange={setRatio} suffix="×" hint="Total water = dose × ratio (default 16)" />
-              )}
+                <>
+                  <Field label="Ratio" value={ratio} onChange={setRatio} suffix="×" hint={isAdvanced ? 'Total = dose × ratio (overridden if you set total water below)' : 'Total water = dose × ratio (default 16)'} />
 
-              {mode === 'v60-ice' && (
-                <Field label="Ice factor" value={iceFactor} onChange={setIceFactor} step="0.05" suffix="×" hint="Ice = total water × factor (default 0.4)" />
-              )}
+                  {isAdvanced && (
+                    <>
+                      <Field label="Total water (optional)" value={advTotal} onChange={setAdvTotal} suffix="g" placeholder="overrides ratio" hint="Enter to set total directly; overrides the ratio" />
+                      <Field label="Number of pours" value={advNPours} onChange={setAdvNPours} step="1" hint="Pours after bloom, split equally" />
+                      <Field label="Bloom water" value={advBloom} onChange={setAdvBloom} suffix="g" placeholder={advBloomPlaceholder} hint="Editable in Advanced — leave blank for 2 × dose" />
+                    </>
+                  )}
 
-              <Field label="Bloom water" value={bloom} onChange={setBloom} suffix="g" placeholder={bloomPlaceholder} hint="Leave blank to use 2 × dose" />
+                  {isV60Preset && (
+                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
+                      <div className="text-xs uppercase tracking-wide text-stone-500">Bloom water (fixed)</div>
+                      <div className="text-sm font-medium text-stone-800">{presetBloom} <span className="ml-1 text-xs font-normal text-stone-500">2 × dose</span></div>
+                    </div>
+                  )}
+
+                  {iceOn && (
+                    <Field label="Ice factor" value={iceFactor} onChange={setIceFactor} step="0.05" suffix="×" hint="Ice = total water × factor (default 0.4)" />
+                  )}
+                </>
+              )}
 
               <label className="block">
                 <span className="block text-sm font-medium text-stone-700">Bloom time</span>
@@ -359,7 +495,7 @@ export default function App() {
                 />
               </label>
 
-              {mode !== 'filter' && (
+              {instrument === 'v60' && (
                 <label className="block">
                   <span className="block text-sm font-medium text-stone-700">Grind size</span>
                   <input
@@ -443,61 +579,69 @@ export default function App() {
               <>
                 <div className="mb-4 grid grid-cols-2 gap-2">
                   <Stat label="Total water" value={`${result.total} g`} accent />
-                  {mode === 'v60-ice' && <Stat label="Ice (in vessel)" value={`${result.ice} g`} />}
-                  {mode === 'v60-ice' && <Stat label="Brew water" value={`${result.brewWater} g`} />}
-                  {mode === 'filter' && <Stat label="Milk to serve" value={`${result.milk} g`} />}
+                  {instrument === 'v60' && iceOn && <Stat label="Ice (in vessel)" value={`${result.ice} g`} />}
+                  {instrument === 'v60' && iceOn && <Stat label="Brew water" value={`${result.brewWater} g`} />}
+                  {instrument === 'filter' && filterMethod === 'with-milk' && <Stat label="Milk to serve" value={`${result.milk} g`} />}
+                  {instrument === 'filter' && filterMethod === 'with-water' && <Stat label="Dilution water" value={`${result.dilutionWater} g`} />}
                   <Stat label="Bloom" value={`${result.bloomWater} g`} />
                 </div>
 
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-stone-200 text-left text-stone-500">
-                      <th className="py-2 font-medium">Step</th>
-                      <th className="py-2 text-right font-medium">Add (g)</th>
-                      <th className="py-2 text-right font-medium">Reads (g)</th>
-                      <th className="py-2 pl-2 text-right font-medium">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lapSteps.map((ls, i) => {
-                      const step = result.steps[i]
-                      const isTerminal = ls.key === terminalKey
-                      const placeholder = isTerminal ? 'on stop' : ls.key === 'bloom' ? bloomTime || '00:30' : 'mm:ss'
-                      return (
-                        <tr key={ls.key} className="border-b border-stone-100 last:border-0">
-                          <td className="py-2 font-medium text-stone-800">{ls.label}</td>
-                          <td className="py-2 text-right tabular-nums">{step ? `+${step.add}` : '—'}</td>
-                          <td className="py-2 text-right font-semibold tabular-nums">{step ? step.cumulative : '—'}</td>
-                          <td className="py-2 pl-2">
-                            <div className="flex items-center justify-end gap-1">
-                              {!isTerminal && (
-                                <button
-                                  onClick={() => timer.lap(ls.key)}
-                                  title={`Lap ${ls.label}`}
-                                  className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
-                                >
-                                  Lap
-                                </button>
-                              )}
-                              <input
-                                type="text"
-                                value={timer.laps[ls.key] ?? ''}
-                                placeholder={placeholder}
-                                onChange={(e) => timer.editLap(ls.key, e.target.value)}
-                                className="w-14 rounded border border-stone-300 px-1 py-0.5 text-center font-mono text-xs tabular-nums outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                <div className="max-h-80 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-stone-200 text-left text-stone-500">
+                        <th className="py-2 font-medium">Step</th>
+                        <th className="py-2 text-right font-medium">Add (g)</th>
+                        <th className="py-2 text-right font-medium">Reads (g)</th>
+                        <th className="py-2 pl-2 text-right font-medium">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lapSteps.map((ls, i) => {
+                        const step = result.steps[i]
+                        const isTerminal = ls.key === terminalKey
+                        const placeholder = isTerminal ? 'on stop' : ls.key === 'bloom' ? bloomTime || '00:30' : 'mm:ss'
+                        return (
+                          <tr key={ls.key} className="border-b border-stone-100 last:border-0">
+                            <td className="py-2 font-medium text-stone-800">{ls.label}</td>
+                            <td className="py-2 text-right tabular-nums">{step ? `+${step.add}` : '—'}</td>
+                            <td className="py-2 text-right font-semibold tabular-nums">{step ? step.cumulative : '—'}</td>
+                            <td className="py-2 pl-2">
+                              <div className="flex items-center justify-end gap-1">
+                                {!isTerminal && (
+                                  <button
+                                    onClick={() => timer.lap(ls.key)}
+                                    title={`Lap ${ls.label}`}
+                                    className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                                  >
+                                    Lap
+                                  </button>
+                                )}
+                                <input
+                                  type="text"
+                                  value={timer.laps[ls.key] ?? ''}
+                                  placeholder={placeholder}
+                                  onChange={(e) => timer.editLap(ls.key, e.target.value)}
+                                  className="w-14 rounded border border-stone-300 px-1 py-0.5 text-center font-mono text-xs tabular-nums outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
-                {mode === 'filter' && (
+                {instrument === 'filter' && (
                   <div className="mt-4 space-y-2 text-sm text-stone-600">
                     <p>🌀 Main pour: spiral from center, swirl, lid on.</p>
-                    <p>🥛 Heat &amp; serve <span className="font-semibold text-stone-800">{result.milk} g</span> milk alongside the decoction.</p>
+                    {filterMethod === 'with-milk' && (
+                      <p>🥛 Heat &amp; serve <span className="font-semibold text-stone-800">{result.milk} g</span> milk alongside the decoction.</p>
+                    )}
+                    {filterMethod === 'with-water' && (
+                      <p>💧 Dilute the decoction with <span className="font-semibold text-stone-800">{result.dilutionWater} g</span> hot water to taste.</p>
+                    )}
                     <p>🌡️ Water 80–85 °C · expected drawdown 7–10 min.</p>
                     <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">⚠️ Remove the tamper / metal disk before brewing.</p>
                   </div>
@@ -561,7 +705,7 @@ export default function App() {
         )}
 
         <footer className="mt-8 text-center text-xs text-stone-400">
-          Coffee Brewing Calculator · v1
+          Coffee Brewing Calculator · v2
         </footer>
       </div>
       {authOpen && <AuthPanel onClose={() => setAuthOpen(false)} />}
