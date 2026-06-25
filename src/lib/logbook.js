@@ -53,14 +53,28 @@ function unpackPours(pours, out) {
   })
 }
 
-/** Flat brew payload (UI shape) → `brews` table row. */
+/** Brew payload (UI shape) → `brews` table row.
+ *  Prefers the explicit Phase 2 fields (instrument/method/withIce + pours array)
+ *  from the calculator; falls back to the legacy method-string + pour1-3 shape
+ *  used by the logbook edit form. */
 function brewToRow(p) {
-  const schema = methodToSchema(p.brewMethod)
+  let instrument = p.instrument
+  let method = p.method
+  let withIce = p.withIce
+  if (!instrument) {
+    const schema = methodToSchema(p.brewMethod)
+    instrument = schema.instrument
+    method = schema.method
+    withIce = schema.with_ice
+  }
+  const pours = Array.isArray(p.pours)
+    ? p.pours.map((x) => ({ water: numOrNull(x.water), time: strOrNull(x.time) }))
+    : packPours(p)
   return {
     name: strOrNull(p.brewName),
-    instrument: schema.instrument,
-    method: schema.method,
-    with_ice: schema.with_ice,
+    instrument,
+    method: method ?? null,
+    with_ice: !!withIce,
     coffee_g: numOrNull(p.coffee),
     ratio: numOrNull(p.ratio),
     total_water_g: numOrNull(p.totalWater),
@@ -68,22 +82,32 @@ function brewToRow(p) {
     bloom_time: strOrNull(p.bloomTimeStr),
     brew_water_g: numOrNull(p.brewWater),
     ice_g: numOrNull(p.ice),
+    ice_factor: numOrNull(p.iceFactor),
     milk_g: numOrNull(p.milk),
+    milk_ratio: numOrNull(p.milkRatio),
+    dilution_ratio: numOrNull(p.dilutionRatio),
+    dilution_water_g: numOrNull(p.dilutionWater),
     drawdown_time: strOrNull(p.drawdownTime),
     grind_size: strOrNull(p.grindSize),
     water_temp: strOrNull(p.waterTemp),
     rating: numOrNull(p.rating),
     notes: strOrNull(p.notes),
-    pours: packPours(p),
+    pours,
   }
 }
 
-/** `brews` table row → flat brew object (UI shape). */
+/** `brews` table row → brew object (UI shape).
+ *  Emits the Phase 2 fields (instrument/methodId/withIce + full pours array) plus
+ *  the legacy flat fields (`method` display string, pour1-3) the current logbook
+ *  list/edit still reads (full recipe-book rework is Task 7). */
 function rowToBrew(row) {
   const out = {
     id: row.id,
     name: row.name || '',
-    method: schemaToMethod(row),
+    instrument: row.instrument,
+    methodId: row.method,
+    withIce: !!row.with_ice,
+    method: schemaToMethod(row), // legacy display string
     date: row.created_at ? row.created_at.slice(0, 10) : '',
     coffee: row.coffee_g,
     ratio: row.ratio,
@@ -91,13 +115,18 @@ function rowToBrew(row) {
     bloomWater: row.bloom_water_g,
     brewWater: row.brew_water_g,
     ice: row.ice_g,
+    iceFactor: row.ice_factor,
     milk: row.milk_g,
+    milkRatio: row.milk_ratio,
+    dilutionRatio: row.dilution_ratio,
+    dilutionWater: row.dilution_water_g,
     rating: row.rating,
     notes: row.notes || '',
     grindSize: row.grind_size || '',
     waterTemp: row.water_temp || '',
     bloomTime: row.bloom_time || '',
     drawdownTime: row.drawdown_time || '',
+    pours: Array.isArray(row.pours) ? row.pours : [],
   }
   unpackPours(row.pours, out)
   return out
