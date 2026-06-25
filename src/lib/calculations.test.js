@@ -113,26 +113,29 @@ describe('V60 — Advanced', () => {
 })
 
 describe('Filter — With Milk', () => {
-  it('matches Logic.md Example 4 (20 g, water ratio 5, milk ratio 3)', () => {
+  it('single full pour, no bloom (20 g, water ratio 5, milk ratio 3)', () => {
     const r = calcFilter({ method: 'with-milk', dose: 20, waterRatio: 5, milkRatio: 3 })
     expect(r.valid).toBe(true)
     expect(r.total).toBe(100)
     expect(r.milk).toBe(60)
     expect(r.dilutionWater).toBeUndefined()
-    expect(r.bloomWater).toBe(40)
-    expect(r.steps.map((s) => s.add)).toEqual([40, 60])
-    expect(r.steps.map((s) => s.cumulative)).toEqual([40, 100])
+    expect(r.bloomWater).toBeNull() // no bloom (client decision 2026-06-26)
+    // one pour of the full decoction water
+    expect(r.steps.map((s) => s.label)).toEqual(['Pour'])
+    expect(r.steps.map((s) => s.add)).toEqual([100])
+    expect(r.steps.map((s) => s.cumulative)).toEqual([100])
   })
 })
 
 describe('Filter — With Water', () => {
-  it('decoction + dilution water = dose × dilution ratio (default 4)', () => {
+  it('decoction (single pour) + dilution water = dose × dilution ratio (default 4)', () => {
     const r = calcFilter({ method: 'with-water', dose: 20, waterRatio: 5, dilutionRatio: 4 })
     expect(r.valid).toBe(true)
     expect(r.total).toBe(100) // decoction unchanged
     expect(r.dilutionWater).toBe(80)
     expect(r.milk).toBeUndefined()
-    expect(r.steps.map((s) => s.cumulative)).toEqual([40, 100])
+    expect(r.bloomWater).toBeNull()
+    expect(r.steps.map((s) => s.cumulative)).toEqual([100])
   })
 })
 

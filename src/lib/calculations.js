@@ -126,12 +126,13 @@ export function calcV60({
 }
 
 /**
- * Filter Coffee — South Indian decoction.
+ * Filter Coffee — South Indian decoction. No bloom (client decision 2026-06-26):
+ * a single pour of the full decoction water (dose × water ratio).
  *
  * With Milk (Phase 1): decoction (water ratio 5) + milk to serve (milk ratio 3).
  * With Water: decoction + a water-dilution amount = dose × dilution ratio
- * (default 4, editable). Bloom + single main pour; milk/dilution are served
- * quantities, not poured on the scale.
+ * (default 4, editable). Milk/dilution are served quantities, not poured on the
+ * scale.
  */
 export function calcFilter({
   method = 'with-milk',
@@ -139,7 +140,6 @@ export function calcFilter({
   waterRatio = DEFAULTS.filter.waterRatio,
   milkRatio = DEFAULTS.filter.milkRatio,
   dilutionRatio = DEFAULTS.filter.dilutionRatio,
-  bloom,
 } = {}) {
   const errors = []
   const withWater = method === 'with-water'
@@ -152,18 +152,9 @@ export function calcFilter({
   }
   if (errors.length) return { valid: false, errors }
 
-  const total = round(dose * waterRatio) // decoction water
-  const bloomWater = resolveBloom(dose, bloom)
-  if (!(bloomWater > 0)) errors.push('Bloom water must be greater than 0 g.')
-  if (bloomWater >= total) errors.push('Bloom water must be less than total water.')
-  if (errors.length) return { valid: false, errors }
-
-  const mainPour = total - bloomWater
-  const steps = [
-    { label: 'Bloom', add: bloomWater, cumulative: bloomWater },
-    { label: 'Main pour', add: mainPour, cumulative: total },
-  ]
-  const out = { valid: true, errors: [], instrument: 'filter', method, total, bloomWater, target: total, nPours: 1, steps }
+  const total = round(dose * waterRatio) // decoction water, poured in one go (no bloom)
+  const steps = [{ label: 'Pour', add: total, cumulative: total }]
+  const out = { valid: true, errors: [], instrument: 'filter', method, total, bloomWater: null, target: total, nPours: 1, steps }
   if (withWater) {
     out.dilutionRatio = dilutionRatio
     out.dilutionWater = round(dose * dilutionRatio)

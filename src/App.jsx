@@ -37,9 +37,9 @@ const METHOD_LABEL = {
 // manually — stopping the timer records its time (PRD §6.6).
 function lapStepsFor(instrument, pourCount) {
   if (instrument === 'filter') {
+    // No bloom for Filter (client decision 2026-06-26): single pour + drawdown.
     return [
-      { key: 'bloom', label: 'Bloom' },
-      { key: 'pour1', label: 'Main pour' },
+      { key: 'pour1', label: 'Pour' },
       { key: 'drawdown', label: 'Drawdown end' },
     ]
   }
@@ -66,7 +66,6 @@ const DEFAULT_STATE = {
   waterRatio: '5',
   milkRatio: '3',
   dilutionRatio: '4',
-  filterBloom: '',
   bloomTime: '00:30',
   grind: '14 clicks',
   tempOn: false,
@@ -105,7 +104,6 @@ export default function App() {
   const [waterRatio, setWaterRatio] = useState(saved.waterRatio)
   const [milkRatio, setMilkRatio] = useState(saved.milkRatio)
   const [dilutionRatio, setDilutionRatio] = useState(saved.dilutionRatio)
-  const [filterBloom, setFilterBloom] = useState(saved.filterBloom)
   const [bloomTime, setBloomTime] = useState(saved.bloomTime)
   const [grind, setGrind] = useState(saved.grind)
   const [tempOn, setTempOn] = useState(saved.tempOn)
@@ -147,7 +145,6 @@ export default function App() {
         waterRatio: num(waterRatio),
         milkRatio: num(milkRatio),
         dilutionRatio: num(dilutionRatio),
-        bloom: num(filterBloom),
       }
     }
     const base = { instrument: 'v60', method: v60Method, dose: num(dose), iceOn, iceFactor: num(iceFactor) }
@@ -155,7 +152,7 @@ export default function App() {
       return { ...base, ratio: num(ratio), totalWater: num(advTotal), bloom: num(advBloom), nPours: num(advNPours) }
     }
     return { ...base, ratio: num(ratio) }
-  }, [instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, filterBloom])
+  }, [instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio])
 
   const result = useMemo(() => calculate(inputs), [inputs])
 
@@ -163,14 +160,14 @@ export default function App() {
   useEffect(() => {
     const state = {
       instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours,
-      waterRatio, milkRatio, dilutionRatio, filterBloom, bloomTime, grind, tempOn, waterTempC,
+      waterRatio, milkRatio, dilutionRatio, bloomTime, grind, tempOn, waterTempC,
     }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } catch {
       /* ignore storage failures (private mode, quota) */
     }
-  }, [instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, filterBloom, bloomTime, grind, tempOn, waterTempC])
+  }, [instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, bloomTime, grind, tempOn, waterTempC])
 
   const resetDefaults = () => {
     setRatio(DEFAULT_STATE.ratio)
@@ -182,7 +179,6 @@ export default function App() {
     setWaterRatio(DEFAULT_STATE.waterRatio)
     setMilkRatio(DEFAULT_STATE.milkRatio)
     setDilutionRatio(DEFAULT_STATE.dilutionRatio)
-    setFilterBloom(DEFAULT_STATE.filterBloom)
     setBloomTime(DEFAULT_STATE.bloomTime)
     setGrind(DEFAULT_STATE.grind)
     setTempOn(DEFAULT_STATE.tempOn)
@@ -197,9 +193,10 @@ export default function App() {
     else lines.push(`Total water ${result.total} g`)
     if (instrument === 'filter' && filterMethod === 'with-milk') lines.push(`Milk to serve ${result.milk} g`)
     if (instrument === 'filter' && filterMethod === 'with-water') lines.push(`Dilution water ${result.dilutionWater} g`)
-    lines.push(`Bloom ${result.bloomWater} g (${bloomTime || '00:30'})`)
+    if (instrument === 'v60') lines.push(`Bloom ${result.bloomWater} g (${bloomTime || '00:30'})`)
     lines.push('Pours (add → scale reads):')
-    result.steps.slice(1).forEach((s) => lines.push(`  ${s.label}: +${s.add} → ${s.cumulative} g`))
+    const pourSteps = instrument === 'filter' ? result.steps : result.steps.slice(1)
+    pourSteps.forEach((s) => lines.push(`  ${s.label}: +${s.add} → ${s.cumulative} g`))
     const timed = lapSteps
       .map((ls) => {
         const t = ls.key === 'bloom' ? timer.laps.bloom || bloomTime : timer.laps[ls.key]
@@ -225,6 +222,8 @@ export default function App() {
     const hhmm = nowDate.toTimeString().slice(0, 5)
     const instLabel = instrument === 'v60' ? 'V60' : 'Filter Coffee'
     const iceTag = instrument === 'v60' && iceOn ? ' · Ice' : ''
+    // Filter has no bloom; its single pour is result.steps[0]. V60 pours follow the bloom.
+    const pourSteps = instrument === 'filter' ? result.steps : result.steps.slice(1)
     const payload = {
       brewName: `${instLabel} ${METHOD_LABEL[method]}${iceTag} · ${num(dose)}g · ${today} ${hhmm}`,
       instrument,
@@ -232,13 +231,13 @@ export default function App() {
       withIce: instrument === 'v60' ? iceOn : false,
       coffee: num(dose),
       totalWater: result.total,
-      bloomWater: result.bloomWater,
-      bloomTimeStr: timer.laps.bloom || bloomTime || '00:30',
+      bloomWater: instrument === 'v60' ? result.bloomWater : undefined,
+      bloomTimeStr: instrument === 'v60' ? timer.laps.bloom || bloomTime || '00:30' : undefined,
       date: today,
       rating: rating === '' ? undefined : Number(rating),
       notes: notes || undefined,
-      // pours: cumulative scale reading + lap time, one per pour after the bloom.
-      pours: result.steps.slice(1).map((s, i) => ({ water: s.cumulative, time: timer.laps[`pour${i + 1}`] || undefined })),
+      // pours: cumulative scale reading + lap time, one per pour.
+      pours: pourSteps.map((s, i) => ({ water: s.cumulative, time: timer.laps[`pour${i + 1}`] || undefined })),
     }
     if (instrument === 'v60') {
       payload.ratio = num(ratio) ?? DEFAULTS.v60.ratio
@@ -271,7 +270,7 @@ export default function App() {
       setSaveStatus('warn')
       return
     }
-    const sig = JSON.stringify({ instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, filterBloom, bloomTime, laps: timer.laps, rating, notes })
+    const sig = JSON.stringify({ instrument, v60Method, filterMethod, dose, ratio, iceOn, iceFactor, advTotal, advBloom, advNPours, waterRatio, milkRatio, dilutionRatio, bloomTime, laps: timer.laps, rating, notes })
     if (sig === lastSavedSig && !window.confirm('You already saved this brew. Save it again as a new Logbook entry?')) return
     setSaveStatus('saving')
     setSaveError('')
@@ -297,7 +296,6 @@ export default function App() {
       if (brew.milkRatio != null) setMilkRatio(String(brew.milkRatio))
       else if (brew.milk != null && brew.coffee) setMilkRatio(String(round2(brew.milk / brew.coffee)))
       if (brew.dilutionRatio != null) setDilutionRatio(String(brew.dilutionRatio))
-      if (brew.bloomWater != null) setFilterBloom(String(brew.bloomWater))
     } else {
       const m = ['1-pour', '3-pour', '10-pour', 'advanced'].includes(brew.methodId) ? brew.methodId : '3-pour'
       setV60Method(m)
@@ -457,7 +455,6 @@ export default function App() {
                   ) : (
                     <Field label="Water (dilution) ratio" value={dilutionRatio} onChange={setDilutionRatio} suffix="×" hint="Dilution water = dose × ratio (default 4)" />
                   )}
-                  <Field label="Bloom water" value={filterBloom} onChange={setFilterBloom} suffix="g" placeholder={advBloomPlaceholder} hint="Leave blank to use 2 × dose" />
                 </>
               ) : (
                 <>
@@ -484,16 +481,18 @@ export default function App() {
                 </>
               )}
 
-              <label className="block">
-                <span className="block text-sm font-medium text-stone-700">Bloom time</span>
-                <input
-                  type="text"
-                  value={bloomTime}
-                  onChange={(e) => setBloomTime(e.target.value)}
-                  placeholder="00:30"
-                  className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
-                />
-              </label>
+              {instrument === 'v60' && (
+                <label className="block">
+                  <span className="block text-sm font-medium text-stone-700">Bloom time</span>
+                  <input
+                    type="text"
+                    value={bloomTime}
+                    onChange={(e) => setBloomTime(e.target.value)}
+                    placeholder="00:30"
+                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                  />
+                </label>
+              )}
 
               {instrument === 'v60' && (
                 <label className="block">
@@ -583,7 +582,7 @@ export default function App() {
                   {instrument === 'v60' && iceOn && <Stat label="Brew water" value={`${result.brewWater} g`} />}
                   {instrument === 'filter' && filterMethod === 'with-milk' && <Stat label="Milk to serve" value={`${result.milk} g`} />}
                   {instrument === 'filter' && filterMethod === 'with-water' && <Stat label="Dilution water" value={`${result.dilutionWater} g`} />}
-                  <Stat label="Bloom" value={`${result.bloomWater} g`} />
+                  {instrument === 'v60' && <Stat label="Bloom" value={`${result.bloomWater} g`} />}
                 </div>
 
                 <div className="max-h-80 overflow-y-auto">
