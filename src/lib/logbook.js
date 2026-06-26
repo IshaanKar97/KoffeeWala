@@ -108,6 +108,7 @@ function rowToBrew(row) {
     methodId: row.method,
     withIce: !!row.with_ice,
     method: schemaToMethod(row), // legacy display string
+    createdAt: row.created_at || null,
     date: row.created_at ? row.created_at.slice(0, 10) : '',
     coffee: row.coffee_g,
     ratio: row.ratio,
@@ -140,12 +141,17 @@ export async function saveBrew(payload) {
   return rowToBrew(data)
 }
 
-/** List the signed-in user's brews, newest first. Resolves with an array or throws. */
-export async function listBrews() {
+/** List a page of the signed-in user's brews, newest first (Supabase range
+ *  pagination). Resolves with { brews, total } or throws. */
+export async function listBrews({ limit = 25, offset = 0 } = {}) {
   if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED)
-  const { data, error } = await supabase.from('brews').select('*').order('created_at', { ascending: false })
+  const { data, error, count } = await supabase
+    .from('brews')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
   if (error) throw new Error(error.message)
-  return (data || []).map(rowToBrew)
+  return { brews: (data || []).map(rowToBrew), total: count ?? null }
 }
 
 /** Update an existing brew (payload must include `id`). Resolves with the brew or throws. */
