@@ -29,7 +29,7 @@ const loadPageSize = () => {
 
 // ---- columns -------------------------------------------------------------
 const ALL_COLUMNS = [
-  { key: 'name', label: 'Recipe', width: 'minmax(150px,1.5fr)', always: true },
+  { key: 'name', label: 'Recipe', width: 'minmax(112px,1.4fr)', always: true },
   { key: 'coffee', label: 'Coffee', width: '64px', align: 'right' },
   { key: 'ratio', label: 'Ratio', width: '52px', align: 'right' },
   { key: 'ice', label: 'Ice', width: '52px', align: 'right' },
