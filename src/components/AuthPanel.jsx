@@ -42,43 +42,43 @@ export default function AuthPanel({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-stone-900">{mode === 'signin' ? 'Sign in' : 'Create account'}</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-700" aria-label="Close">✕</button>
+          <h2 className="text-lg font-semibold text-roast">{mode === 'signin' ? 'Sign in' : 'Create account'}</h2>
+          <button onClick={onClose} className="text-muted hover:text-roast" aria-label="Close">✕</button>
         </div>
 
         <button
           onClick={google}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50"
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-sm font-medium text-roast hover:bg-surface"
         >
           Continue with Google
         </button>
 
-        <div className="mb-4 flex items-center gap-3 text-xs text-stone-400">
-          <div className="h-px flex-1 bg-stone-200" /> or <div className="h-px flex-1 bg-stone-200" />
+        <div className="mb-4 flex items-center gap-3 text-xs text-muted">
+          <div className="h-px flex-1 bg-line" /> or <div className="h-px flex-1 bg-line" />
         </div>
 
         <form onSubmit={submit} className="space-y-3">
           <label className="block">
-            <span className="block text-sm font-medium text-stone-700">Email</span>
+            <span className="block text-sm font-medium text-roast">Email</span>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
             />
           </label>
           <label className="block">
-            <span className="block text-sm font-medium text-stone-700">Password</span>
+            <span className="block text-sm font-medium text-roast">Password</span>
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+              className="mt-1 w-full rounded-lg border border-line px-3 py-2 outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
             />
           </label>
 
@@ -88,13 +88,13 @@ export default function AuthPanel({ onClose }) {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-50"
+            className="w-full rounded-lg bg-espresso px-4 py-2 text-sm font-medium text-white hover:bg-espresso-700 disabled:opacity-50"
           >
             {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-stone-500">
+        <p className="mt-4 text-center text-sm text-muted">
           {mode === 'signin' ? "No account?" : 'Have an account?'}{' '}
           <button
             onClick={() => {
@@ -102,7 +102,7 @@ export default function AuthPanel({ onClose }) {
               setError('')
               setInfo('')
             }}
-            className="font-medium text-amber-700 hover:underline"
+            className="font-medium text-espresso hover:underline"
           >
             {mode === 'signin' ? 'Create one' : 'Sign in'}
           </button>

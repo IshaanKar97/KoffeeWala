@@ -14,9 +14,9 @@ const METHOD_LABEL = {
   'with-milk': 'With Milk', 'with-water': 'With Water',
 }
 const INSTRUMENT_COLOR = {
-  v60: 'bg-blue-100 text-blue-800',
-  filter: 'bg-orange-100 text-orange-800',
-  mokka: 'bg-stone-100 text-stone-700',
+  v60: 'bg-tint text-espresso-700',
+  filter: 'bg-warnbg text-warn',
+  mokka: 'bg-cream text-muted',
 }
 
 const PAGE_SIZE_KEY = 'cbc-logbook-pagesize'
@@ -101,7 +101,7 @@ function useIsDesktop() {
 
 function InstrumentBadge({ brew }) {
   return (
-    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${INSTRUMENT_COLOR[brew.instrument] || 'bg-stone-100 text-stone-700'}`}>
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${INSTRUMENT_COLOR[brew.instrument] || 'bg-cream text-roast'}`}>
       {methodTitle(brew)}{brew.withIce ? ' · Ice' : ''}
     </span>
   )
@@ -115,7 +115,7 @@ function Chip({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition ${active ? 'border-amber-600 bg-amber-700 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-amber-500'}`}
+      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition ${active ? 'border-espresso bg-espresso text-white' : 'border-line bg-surface text-muted hover:border-espresso'}`}
     >
       {children}
     </button>
@@ -126,33 +126,33 @@ function Filters({ filters, setFilters }) {
   const set = (patch) => setFilters((f) => ({ ...f, ...patch }))
   const setDate = (patch) => setFilters((f) => ({ ...f, date: { ...f.date, ...patch } }))
   return (
-    <div className="mb-3 space-y-2 rounded-lg border border-stone-200 bg-stone-50 p-2.5">
+    <div className="mb-3 space-y-2 rounded-lg border border-line bg-surface p-2.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-stone-400">Instrument</span>
+        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted">Instrument</span>
         <Chip active={filters.instrument === 'all'} onClick={() => set({ instrument: 'all' })}>All</Chip>
         <Chip active={filters.instrument === 'v60'} onClick={() => set({ instrument: 'v60' })}>V60</Chip>
         <Chip active={filters.instrument === 'filter'} onClick={() => set({ instrument: 'filter' })}>Filter</Chip>
-        <span className="ml-3 mr-1 text-xs font-medium uppercase tracking-wide text-stone-400">Ice</span>
+        <span className="ml-3 mr-1 text-xs font-medium uppercase tracking-wide text-muted">Ice</span>
         <Chip active={filters.ice === 'all'} onClick={() => set({ ice: 'all' })}>All</Chip>
         <Chip active={filters.ice === 'with'} onClick={() => set({ ice: 'with' })}>Ice</Chip>
         <Chip active={filters.ice === 'without'} onClick={() => set({ ice: 'without' })}>No ice</Chip>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-stone-400">Rating</span>
+        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted">Rating</span>
         {RATING_STEPS.map((r) => (
           <Chip key={r} active={filters.ratingMin === r} onClick={() => set({ ratingMin: r })}>{r}+</Chip>
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-stone-400">Date</span>
+        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted">Date</span>
         {[['all', 'All'], ['today', 'Today'], ['7d', 'Last 7d'], ['30d', 'Last 30d'], ['custom', 'Custom']].map(([m, label]) => (
           <Chip key={m} active={filters.date.mode === m} onClick={() => setDate({ mode: m })}>{label}</Chip>
         ))}
         {filters.date.mode === 'custom' && (
-          <span className="flex items-center gap-1 text-xs text-stone-500">
-            <input type="date" value={filters.date.from} onChange={(e) => setDate({ from: e.target.value })} className="rounded border border-stone-300 px-1.5 py-0.5 outline-none focus:border-amber-600" />
+          <span className="flex items-center gap-1 text-xs text-muted">
+            <input type="date" value={filters.date.from} onChange={(e) => setDate({ from: e.target.value })} className="rounded border border-line px-1.5 py-0.5 outline-none focus:border-espresso" />
             <span>→</span>
-            <input type="date" value={filters.date.to} onChange={(e) => setDate({ to: e.target.value })} className="rounded border border-stone-300 px-1.5 py-0.5 outline-none focus:border-amber-600" />
+            <input type="date" value={filters.date.to} onChange={(e) => setDate({ to: e.target.value })} className="rounded border border-line px-1.5 py-0.5 outline-none focus:border-espresso" />
           </span>
         )}
       </div>
@@ -171,21 +171,21 @@ function ColumnsMenu({ visible, setVisible }) {
   }
   return (
     <div className="relative">
-      <button onClick={() => setOpen((o) => !o)} className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 hover:border-amber-600 hover:text-amber-800">
+      <button onClick={() => setOpen((o) => !o)} className="rounded-lg border border-line px-3 py-1 text-xs font-medium text-roast hover:border-espresso hover:text-espresso-700">
         Columns ▾
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-1 max-h-72 w-44 overflow-y-auto rounded-lg border border-stone-200 bg-white p-2 shadow-lg">
+          <div className="absolute right-0 z-20 mt-1 max-h-72 w-44 overflow-y-auto rounded-lg border border-line bg-surface p-2 shadow-lg">
             {ALL_COLUMNS.map((c) => (
-              <label key={c.key} className={`flex items-center gap-2 px-1 py-0.5 text-xs ${c.always ? 'text-stone-400' : 'text-stone-700'}`}>
+              <label key={c.key} className={`flex items-center gap-2 px-1 py-0.5 text-xs ${c.always ? 'text-muted' : 'text-roast'}`}>
                 <input
                   type="checkbox"
                   checked={visible.includes(c.key)}
                   disabled={c.always}
                   onChange={() => toggle(c.key)}
-                  className="h-3.5 w-3.5 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
+                  className="h-3.5 w-3.5 rounded border-line text-espresso focus:ring-espresso"
                 />
                 {c.label}
               </label>
@@ -206,13 +206,13 @@ function Row({ index, style, brews, selectedId, onSelect, columns, gridTemplate,
       <div style={style}>
         <div
           onClick={() => onSelect(b.id)}
-          className={`grid h-11 cursor-pointer items-center gap-2 border-b border-stone-100 px-3 text-sm hover:bg-amber-50/60 ${selected ? 'bg-amber-50' : ''}`}
+          className={`grid h-11 cursor-pointer items-center gap-2 border-b border-cream px-3 text-sm hover:bg-tint/60 ${selected ? 'bg-tint' : ''}`}
           style={{ gridTemplateColumns: gridTemplate }}
         >
           {columns.map((c) =>
             c.key === 'name' ? (
               <div key="name" className="min-w-0">
-                <div className="truncate font-medium text-stone-800">{fmtDateTime(b)}</div>
+                <div className="truncate font-medium text-roast">{fmtDateTime(b)}</div>
                 <div className="truncate"><InstrumentBadge brew={b} /></div>
               </div>
             ) : (
@@ -227,14 +227,14 @@ function Row({ index, style, brews, selectedId, onSelect, columns, gridTemplate,
     <div style={style} className="px-0.5 pb-3">
       <button
         onClick={() => onSelect(b.id)}
-        className={`block h-full w-full rounded-xl border bg-white p-4 text-left shadow-sm hover:border-amber-400 ${selected ? 'border-amber-400' : 'border-stone-200'}`}
+        className={`block h-full w-full rounded-xl border bg-surface p-4 text-left shadow-sm hover:border-espresso ${selected ? 'border-espresso' : 'border-line'}`}
       >
         <div className="flex items-start justify-between gap-3">
-          <span className="font-medium text-stone-900">{fmtDateTime(b)}</span>
-          {b.rating != null && <span className="shrink-0 rounded-lg bg-amber-50 px-2 py-0.5 text-sm font-semibold text-amber-800">{b.rating}/10</span>}
+          <span className="font-medium text-roast">{fmtDateTime(b)}</span>
+          {b.rating != null && <span className="shrink-0 rounded-lg bg-tint px-2 py-0.5 text-sm font-semibold text-espresso-700">{b.rating}/10</span>}
         </div>
         <div className="mt-1"><InstrumentBadge brew={b} /></div>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-stone-500">
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
           <span>{b.coffee != null ? `${b.coffee} g` : '—'} dose</span>
           {b.ratio != null && <span>· 1:{b.ratio}</span>}
           {b.withIce && b.ice != null && <span>· {b.ice} g ice</span>}
@@ -258,9 +258,9 @@ function brewToPayload(b) {
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-      <div className="text-xs uppercase tracking-wide text-stone-500">{label}</div>
-      <div className="text-sm font-semibold text-stone-900">{value}</div>
+    <div className="rounded-lg border border-line bg-surface px-3 py-2">
+      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
+      <div className="text-sm font-semibold text-roast">{value}</div>
     </div>
   )
 }
@@ -306,23 +306,23 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button onClick={onClose} className="rounded-lg border border-stone-300 px-2.5 py-1 text-xs font-medium text-stone-700 hover:border-stone-400">
+        <button onClick={onClose} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-roast hover:border-muted">
           <span className="md:hidden">← Back</span>
           <span className="hidden md:inline">✕ Close</span>
         </button>
         <div className="ml-auto flex gap-2">
           {!editing ? (
             <>
-              <button onClick={startEdit} className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 hover:border-amber-600 hover:text-amber-800">Edit</button>
+              <button onClick={startEdit} className="rounded-lg border border-line px-3 py-1 text-xs font-medium text-roast hover:border-espresso hover:text-espresso-700">Edit</button>
               <button onClick={remove} disabled={state === 'deleting'} className="rounded-lg border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:border-red-500 hover:bg-red-50 disabled:opacity-50">
                 {state === 'deleting' ? 'Deleting…' : 'Delete'}
               </button>
-              <button onClick={() => onRebrew(brew)} className="rounded-lg bg-amber-700 px-3 py-1 text-xs font-medium text-white hover:bg-amber-800">Re-brew</button>
+              <button onClick={() => onRebrew(brew)} className="rounded-lg bg-espresso px-3 py-1 text-xs font-medium text-white hover:bg-espresso-700">Re-brew</button>
             </>
           ) : (
             <>
-              <button onClick={() => setEditing(false)} className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 hover:border-stone-400">Cancel</button>
-              <button onClick={save} disabled={state === 'saving'} className="rounded-lg bg-amber-700 px-3 py-1 text-xs font-medium text-white hover:bg-amber-800 disabled:opacity-50">
+              <button onClick={() => setEditing(false)} className="rounded-lg border border-line px-3 py-1 text-xs font-medium text-roast hover:border-muted">Cancel</button>
+              <button onClick={save} disabled={state === 'saving'} className="rounded-lg bg-espresso px-3 py-1 text-xs font-medium text-white hover:bg-espresso-700 disabled:opacity-50">
                 {state === 'saving' ? 'Saving…' : 'Save'}
               </button>
             </>
@@ -331,7 +331,7 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
       </div>
 
       <div className="mb-3">
-        <h3 className="text-base font-semibold text-stone-900">{fmtDateTime(brew)}</h3>
+        <h3 className="text-base font-semibold text-roast">{fmtDateTime(brew)}</h3>
         <div className="mt-1"><InstrumentBadge brew={brew} /></div>
       </div>
 
@@ -354,7 +354,7 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-stone-200 text-left text-stone-500">
+              <tr className="border-b border-line text-left text-muted">
                 <th className="py-1.5 font-medium">Step</th>
                 <th className="py-1.5 text-right font-medium">Reads (g)</th>
                 <th className="py-1.5 pl-2 text-right font-medium">Time</th>
@@ -362,22 +362,22 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
             </thead>
             <tbody>
               {isV60 && (
-                <tr className="border-b border-stone-100">
-                  <td className="py-1.5 font-medium text-stone-800">Bloom</td>
+                <tr className="border-b border-cream">
+                  <td className="py-1.5 font-medium text-roast">Bloom</td>
                   <td className="py-1.5 text-right tabular-nums">{brew.bloomWater ?? '—'}</td>
                   <td className="py-1.5 pl-2 text-right tabular-nums">{brew.bloomTime || '—'}</td>
                 </tr>
               )}
               {pours.map((p, i) => (
-                <tr key={i} className="border-b border-stone-100 last:border-0">
-                  <td className="py-1.5 font-medium text-stone-800">{brew.instrument === 'filter' ? 'Pour' : `Pour ${i + 1}`}</td>
+                <tr key={i} className="border-b border-cream last:border-0">
+                  <td className="py-1.5 font-medium text-roast">{brew.instrument === 'filter' ? 'Pour' : `Pour ${i + 1}`}</td>
                   <td className="py-1.5 text-right tabular-nums">{p.water ?? '—'}</td>
                   <td className="py-1.5 pl-2 text-right tabular-nums">{p.time || '—'}</td>
                 </tr>
               ))}
               {brew.drawdownTime && (
-                <tr className="border-b border-stone-100 last:border-0">
-                  <td className="py-1.5 font-medium text-stone-800">Drawdown end</td>
+                <tr className="border-b border-cream last:border-0">
+                  <td className="py-1.5 font-medium text-roast">Drawdown end</td>
                   <td className="py-1.5 text-right tabular-nums">—</td>
                   <td className="py-1.5 pl-2 text-right tabular-nums">{brew.drawdownTime}</td>
                 </tr>
@@ -385,41 +385,41 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
             </tbody>
           </table>
 
-          {brew.rating != null && <p className="mt-3 text-sm font-medium text-amber-800">Rating {brew.rating}/10</p>}
-          {brew.notes && <p className="mt-2 text-sm italic text-stone-600">“{brew.notes}”</p>}
+          {brew.rating != null && <p className="mt-3 text-sm font-medium text-espresso-700">Rating {brew.rating}/10</p>}
+          {brew.notes && <p className="mt-2 text-sm italic text-muted">“{brew.notes}”</p>}
         </>
       ) : (
         <div className="space-y-3">
-          <p className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-500">
+          <p className="rounded-lg border border-line bg-surface px-3 py-2 text-xs text-muted">
             Water amounts &amp; pours are locked — use <span className="font-medium">Re-brew</span> to recompute them.
           </p>
           <label className="block">
-            <span className="block text-xs font-medium text-stone-600">Name</span>
-            <input value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-stone-300 px-2 py-1.5 text-sm outline-none focus:border-amber-600" />
+            <span className="block text-xs font-medium text-muted">Name</span>
+            <input value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso" />
           </label>
           <label className="block">
-            <span className="block text-xs font-medium text-stone-600">Rating /10</span>
-            <input type="number" min="0" max="10" value={form.rating} onChange={(e) => setForm((s) => ({ ...s, rating: e.target.value }))} onWheel={(e) => e.currentTarget.blur()} className="mt-1 w-24 rounded-lg border border-stone-300 px-2 py-1.5 text-sm outline-none focus:border-amber-600" />
+            <span className="block text-xs font-medium text-muted">Rating /10</span>
+            <input type="number" min="0" max="10" value={form.rating} onChange={(e) => setForm((s) => ({ ...s, rating: e.target.value }))} onWheel={(e) => e.currentTarget.blur()} className="mt-1 w-24 rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso" />
           </label>
           {isV60 && (
             <>
               <label className="block">
-                <span className="block text-xs font-medium text-stone-600">Grind size</span>
-                <input value={form.grindSize} onChange={(e) => setForm((s) => ({ ...s, grindSize: e.target.value }))} className="mt-1 w-full rounded-lg border border-stone-300 px-2 py-1.5 text-sm outline-none focus:border-amber-600" />
+                <span className="block text-xs font-medium text-muted">Grind size</span>
+                <input value={form.grindSize} onChange={(e) => setForm((s) => ({ ...s, grindSize: e.target.value }))} className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso" />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-stone-600">Bloom time</span>
-                <input value={form.bloomTime} onChange={(e) => setForm((s) => ({ ...s, bloomTime: e.target.value }))} className="mt-1 w-28 rounded-lg border border-stone-300 px-2 py-1.5 text-sm outline-none focus:border-amber-600" />
+                <span className="block text-xs font-medium text-muted">Bloom time</span>
+                <input value={form.bloomTime} onChange={(e) => setForm((s) => ({ ...s, bloomTime: e.target.value }))} className="mt-1 w-28 rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso" />
               </label>
             </>
           )}
           <label className="block">
-            <span className="block text-xs font-medium text-stone-600">Water temp</span>
-            <input value={form.waterTemp} onChange={(e) => setForm((s) => ({ ...s, waterTemp: e.target.value }))} className="mt-1 w-28 rounded-lg border border-stone-300 px-2 py-1.5 text-sm outline-none focus:border-amber-600" />
+            <span className="block text-xs font-medium text-muted">Water temp</span>
+            <input value={form.waterTemp} onChange={(e) => setForm((s) => ({ ...s, waterTemp: e.target.value }))} className="mt-1 w-28 rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso" />
           </label>
           <label className="block">
-            <span className="block text-xs font-medium text-stone-600">Tasting notes</span>
-            <textarea value={form.notes} onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-stone-300 px-2 py-1.5 text-sm outline-none focus:border-amber-600" />
+            <span className="block text-xs font-medium text-muted">Tasting notes</span>
+            <textarea value={form.notes} onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso" />
           </label>
         </div>
       )}
@@ -430,12 +430,12 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
 function PageSizeSelector({ pageSize, onChange }) {
   const [custom, setCustom] = useState(!PRESET_SIZES.includes(pageSize))
   return (
-    <div className="flex items-center gap-1 text-xs text-stone-500">
+    <div className="flex items-center gap-1 text-xs text-muted">
       <span>Page size</span>
       <select
         value={custom ? 'custom' : String(pageSize)}
         onChange={(e) => { if (e.target.value === 'custom') setCustom(true); else { setCustom(false); onChange(Number(e.target.value)) } }}
-        className="rounded-lg border border-stone-300 bg-white px-2 py-1 text-stone-700 outline-none focus:border-amber-600"
+        className="rounded-lg border border-line bg-surface px-2 py-1 text-roast outline-none focus:border-espresso"
       >
         {PRESET_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
         <option value="custom">Custom</option>
@@ -445,7 +445,7 @@ function PageSizeSelector({ pageSize, onChange }) {
           type="number" min="1" max="100" value={pageSize}
           onChange={(e) => { const n = parseInt(e.target.value, 10); if (Number.isFinite(n) && n >= 1 && n <= 100) onChange(n) }}
           onWheel={(e) => e.currentTarget.blur()}
-          className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-stone-700 outline-none focus:border-amber-600"
+          className="w-16 rounded-lg border border-line px-2 py-1 text-roast outline-none focus:border-espresso"
         />
       )}
     </div>
@@ -525,13 +525,13 @@ export default function Logbook({ onRebrew }) {
     (filters.date.mode !== 'all' ? 1 : 0)
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Logbook</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Logbook</h2>
         <div className="flex items-center gap-3">
           <PageSizeSelector pageSize={pageSize} onChange={changePageSize} />
           {isDesktop && <ColumnsMenu visible={visibleCols} setVisible={setVisibleCols} />}
-          <button onClick={refresh} disabled={status === 'loading'} className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 hover:border-amber-600 hover:text-amber-800 disabled:opacity-50">
+          <button onClick={refresh} disabled={status === 'loading'} className="rounded-lg border border-line px-3 py-1 text-xs font-medium text-roast hover:border-espresso hover:text-espresso-700 disabled:opacity-50">
             {status === 'loading' ? 'Loading…' : 'Refresh'}
           </button>
         </div>
@@ -549,16 +549,16 @@ export default function Logbook({ onRebrew }) {
             <div className="mb-3">
               <button
                 onClick={() => setShowFilters((o) => !o)}
-                className="flex w-full items-center justify-between rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700"
+                className="flex w-full items-center justify-between rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-roast"
               >
-                <span>Filters{activeFilterCount > 0 ? <span className="ml-1.5 rounded-full bg-amber-700 px-1.5 py-0.5 text-xs text-white">{activeFilterCount}</span> : ''}</span>
-                <span className="text-stone-400">{showFilters ? '▲' : '▼'}</span>
+                <span>Filters{activeFilterCount > 0 ? <span className="ml-1.5 rounded-full bg-espresso px-1.5 py-0.5 text-xs text-white">{activeFilterCount}</span> : ''}</span>
+                <span className="text-muted">{showFilters ? '▲' : '▼'}</span>
               </button>
               {showFilters && <div className="mt-2"><Filters filters={filters} setFilters={setFilters} /></div>}
             </div>
           )}
 
-          {status === 'loading' && <p className="text-sm text-stone-500">Loading your brews…</p>}
+          {status === 'loading' && <p className="text-sm text-muted">Loading your brews…</p>}
 
           {status === 'error' && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -568,16 +568,16 @@ export default function Logbook({ onRebrew }) {
           )}
 
           {status === 'loaded' && brews.length === 0 && (
-            <p className="text-sm text-stone-500">No brews match these filters.</p>
+            <p className="text-sm text-muted">No brews match these filters.</p>
           )}
 
           {status === 'loaded' && brews.length > 0 && (
             <div className="md:flex md:items-start md:gap-4">
               <div className="md:min-w-0 md:flex-1">
                 {isDesktop ? (
-                  <div className="overflow-hidden rounded-lg border border-stone-200">
+                  <div className="overflow-hidden rounded-lg border border-line">
                     <div
-                      className="grid gap-2 border-b border-stone-200 px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-stone-500"
+                      className="grid gap-2 border-b border-line px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-muted"
                       style={{ gridTemplateColumns: gridTemplate }}
                     >
                       {columns.map((c) => <div key={c.key} className={c.align === 'right' ? 'text-right' : ''}>{c.label}</div>)}
@@ -588,10 +588,10 @@ export default function Logbook({ onRebrew }) {
                   <List rowComponent={Row} rowCount={brews.length} rowHeight={rowHeight} rowProps={rowProps} style={{ height: listHeight }} />
                 )}
 
-                <div className="mt-3 flex items-center justify-between text-xs text-stone-500">
+                <div className="mt-3 flex items-center justify-between text-xs text-muted">
                   <span>Showing {brews.length}{total != null ? ` of ${total}` : ''}</span>
                   {hasMore && (
-                    <button onClick={loadMore} disabled={loadingMore} className="rounded-lg border border-stone-300 px-3 py-1 font-medium text-stone-700 hover:border-amber-600 hover:text-amber-800 disabled:opacity-50">
+                    <button onClick={loadMore} disabled={loadingMore} className="rounded-lg border border-line px-3 py-1 font-medium text-roast hover:border-espresso hover:text-espresso-700 disabled:opacity-50">
                       {loadingMore ? 'Loading…' : 'Load more'}
                     </button>
                   )}
@@ -599,7 +599,7 @@ export default function Logbook({ onRebrew }) {
               </div>
 
               {isDesktop && selected && (
-                <div className="md:w-96 md:shrink-0 md:border-l md:border-stone-200 md:pl-4">
+                <div className="md:w-96 md:shrink-0 md:border-l md:border-line md:pl-4">
                   <Detail brew={selected} onClose={() => setSelectedId(null)} onRebrew={onRebrew} onSaved={refresh} />
                 </div>
               )}

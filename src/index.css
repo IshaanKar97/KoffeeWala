@@ -1,7 +1,24 @@
 @import "tailwindcss";
 
+/* Cream + espresso design tokens (see DESIGN.md). Tailwind v4 @theme generates
+   color utilities (background, text, border) from these custom properties. */
+@theme {
+  --color-cream: #efe7da;       /* app canvas */
+  --color-surface: #fbf7f0;     /* cards / inputs */
+  --color-surface2: #fffdf8;    /* raised */
+  --color-tint: #f1e6d6;        /* light espresso accent bg */
+  --color-espresso: #95623a;    /* primary — buttons, active, key figures */
+  --color-espresso-700: #824f2c;/* primary pressed */
+  --color-roast: #3a2e25;       /* headings / body text */
+  --color-muted: #998a7a;       /* labels / captions */
+  --color-line: #e9e0d2;        /* hairlines / dividers / unselected chips */
+  --color-gold: #e1a23a;        /* rating */
+  --color-warn: #c0563f;        /* warning (terracotta) */
+  --color-warnbg: #f7e3dc;      /* warning bg */
+}
+
 /* Soft reveal for conditionally-shown inputs (e.g. Ice factor) so toggling a
-   mode doesn't make surrounding fields jump abruptly (UX debt D7). */
+   mode does not make surrounding fields jump abruptly (UX debt D7). */
 @keyframes reveal-field {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
