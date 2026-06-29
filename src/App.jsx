@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { calculate, defaultBloom, DEFAULTS, V60_POURS } from './lib/calculations.js'
-import Field, { TimeField, Toggle } from './components/Field.jsx'
+import Field, { TimeField, Toggle, Stepper } from './components/Field.jsx'
 import { useBrewTimer, fmt } from './lib/useBrewTimer.js'
 import { saveBrew } from './lib/logbook.js'
 import Logbook from './components/Logbook.jsx'
@@ -81,9 +81,9 @@ const loadState = () => {
 
 function Stat({ label, value, accent = false }) {
   return (
-    <div className={`rounded-lg border px-3 py-2 ${accent ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-stone-50'}`}>
-      <div className="text-xs uppercase tracking-wide text-stone-500">{label}</div>
-      <div className="text-lg font-semibold text-stone-900">{value}</div>
+    <div className={`rounded-lg border px-3 py-2 ${accent ? 'border-espresso/40 bg-tint' : 'border-line bg-surface'}`}>
+      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
+      <div className="text-lg font-semibold text-roast">{value}</div>
     </div>
   )
 }
@@ -381,23 +381,23 @@ export default function App() {
   const advBloomPlaceholder = num(dose) > 0 ? `${defaultBloom(num(dose))} (default)` : '2 × dose'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-100 to-stone-200 text-stone-900">
+    <div className="min-h-screen bg-cream text-roast">
       <div className={`mx-auto px-4 py-8 ${view === 'logbook' ? 'max-w-5xl' : 'max-w-3xl'}`}>
         <header className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">☕ Coffee Brewing Calculator</h1>
-            <p className="mt-1 text-stone-600">
+            <p className="mt-1 text-muted">
               Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.
             </p>
           </div>
           <div className="shrink-0 pt-1 text-right text-sm">
             {user ? (
               <div className="flex flex-col items-end gap-1">
-                <span className="max-w-[12rem] truncate text-stone-600" title={user.email}>{user.email}</span>
-                <button onClick={signOut} className="text-xs font-medium text-amber-700 hover:text-amber-900">Sign out</button>
+                <span className="max-w-[12rem] truncate text-muted" title={user.email}>{user.email}</span>
+                <button onClick={signOut} className="text-xs font-medium text-espresso hover:text-espresso-700">Sign out</button>
               </div>
             ) : (
-              <button onClick={() => setAuthOpen(true)} className="rounded-lg bg-amber-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-800">
+              <button onClick={() => setAuthOpen(true)} className="rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-white hover:bg-espresso-700">
                 Sign in
               </button>
             )}
@@ -405,7 +405,7 @@ export default function App() {
         </header>
 
         {/* View toggle: Calculator / Logbook */}
-        <div className="mb-6 flex gap-1 border-b border-stone-300">
+        <div className="mb-6 flex gap-1 border-b border-line">
           {[
             ['calculator', 'Calculator'],
             ['logbook', 'Logbook'],
@@ -414,7 +414,7 @@ export default function App() {
               key={id}
               onClick={() => setView(id)}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
-                view === id ? 'border-amber-700 text-amber-800' : 'border-transparent text-stone-500 hover:text-stone-800'
+                view === id ? 'border-espresso text-espresso-700' : 'border-transparent text-muted hover:text-roast'
               }`}
             >
               {label}
@@ -426,9 +426,9 @@ export default function App() {
           (user ? (
             <Logbook onRebrew={reBrew} />
           ) : (
-            <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-              <p className="text-stone-600">Sign in to view and manage your logbook.</p>
-              <button onClick={() => setAuthOpen(true)} className="mt-3 rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800">
+            <section className="rounded-2xl border border-line bg-surface p-6 text-center shadow-sm">
+              <p className="text-muted">Sign in to view and manage your logbook.</p>
+              <button onClick={() => setAuthOpen(true)} className="mt-3 rounded-lg bg-espresso px-4 py-2 text-sm font-medium text-white hover:bg-espresso-700">
                 Sign in
               </button>
             </section>
@@ -438,15 +438,15 @@ export default function App() {
           <>
             {/* Instrument selector */}
             <div className="mb-2">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">Instrument</span>
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Instrument</span>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
+                <div className="inline-flex flex-wrap gap-1 rounded-xl border border-line bg-surface p-1 shadow-sm">
                   {INSTRUMENTS.filter((ins) => !ins.disabled).map((ins) => (
                     <button
                       key={ins.id}
                       onClick={() => setInstrument(ins.id)}
                       className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                        instrument === ins.id ? 'bg-amber-700 text-white shadow' : 'text-stone-600 hover:text-stone-900'
+                        instrument === ins.id ? 'bg-espresso text-white shadow' : 'text-muted hover:text-roast'
                       }`}
                     >
                       {ins.label}
@@ -454,9 +454,9 @@ export default function App() {
                   ))}
                 </div>
                 {INSTRUMENTS.filter((ins) => ins.disabled).map((ins) => (
-                  <span key={ins.id} title="Coming soon" className="inline-flex cursor-not-allowed items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-stone-400">
+                  <span key={ins.id} title="Coming soon" className="inline-flex cursor-not-allowed items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted">
                     {ins.label}
-                    <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-stone-500">Soon</span>
+                    <span className="rounded bg-cream px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted">Soon</span>
                   </span>
                 ))}
               </div>
@@ -464,8 +464,8 @@ export default function App() {
 
             {/* Brewing method selector */}
             <div className="mb-5">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">Brewing method</span>
-              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Brewing method</span>
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-line bg-surface p-1 shadow-sm">
                 {(instrument === 'v60' ? V60_METHODS : FILTER_METHODS).map((m) => {
                   const active = method === m.id
                   const onSelect = instrument === 'v60' ? () => setV60Method(m.id) : () => setFilterMethod(m.id)
@@ -473,7 +473,7 @@ export default function App() {
                     <button
                       key={m.id}
                       onClick={onSelect}
-                      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${active ? 'bg-amber-700 text-white shadow' : 'text-stone-600 hover:text-stone-900'}`}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${active ? 'bg-espresso text-white shadow' : 'text-muted hover:text-roast'}`}
                     >
                       {m.label}
                     </button>
@@ -490,15 +490,15 @@ export default function App() {
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Inputs */}
-          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Inputs</h2>
-              <button onClick={resetDefaults} className="text-xs font-medium text-amber-700 hover:text-amber-900">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Inputs</h2>
+              <button onClick={resetDefaults} className="text-xs font-medium text-espresso hover:text-espresso-700">
                 Reset
               </button>
             </div>
             <div className="space-y-4">
-              <Field label="Coffee dose" value={dose} onChange={setDose} suffix="g" placeholder="e.g. 20" error={fieldErrors.dose} />
+              <Stepper label="Coffee dose" value={dose} onChange={setDose} suffix="g" step={1} error={fieldErrors.dose} />
 
               {instrument === 'filter' ? (
                 <>
@@ -522,7 +522,7 @@ export default function App() {
                     warning={advOverride ? undefined : fieldWarnings.ratio}
                   />
                   {advOverride && (
-                    <button onClick={() => setAdvTotal('')} className="-mt-2 block text-xs font-medium text-amber-700 hover:text-amber-900">
+                    <button onClick={() => setAdvTotal('')} className="-mt-2 block text-xs font-medium text-espresso hover:text-espresso-700">
                       Use ratio instead (clear total water)
                     </button>
                   )}
@@ -536,9 +536,9 @@ export default function App() {
                   )}
 
                   {isV60Preset && (
-                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-                      <div className="text-xs uppercase tracking-wide text-stone-500">Bloom water (fixed)</div>
-                      <div className="text-sm font-medium text-stone-800">{presetBloom} <span className="ml-1 text-xs font-normal text-stone-500">2 × dose · editable in Advanced</span></div>
+                    <div className="rounded-lg border border-line bg-surface px-3 py-2">
+                      <div className="text-xs uppercase tracking-wide text-muted">Bloom water (fixed)</div>
+                      <div className="text-sm font-medium text-roast">{presetBloom} <span className="ml-1 text-xs font-normal text-muted">2 × dose · editable in Advanced</span></div>
                     </div>
                   )}
 
@@ -556,30 +556,30 @@ export default function App() {
 
               {instrument === 'v60' && (
                 <label className="block">
-                  <span className="block text-sm font-medium text-stone-700">Grind size <span className="font-normal text-stone-400">(optional)</span></span>
+                  <span className="block text-sm font-medium text-roast">Grind size <span className="font-normal text-muted">(optional)</span></span>
                   <input
                     type="text"
                     value={grind}
                     onChange={(e) => setGrind(e.target.value)}
                     placeholder="e.g. 14 clicks · medium-fine"
-                    className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                    className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
                   />
-                  <span className="mt-1 block text-xs text-stone-500">Your grinder’s setting — saved as a note on the brew.</span>
+                  <span className="mt-1 block text-xs text-muted">Your grinder’s setting — saved as a note on the brew.</span>
                 </label>
               )}
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-roast">
                   <input
                     type="checkbox"
                     checked={tempOn}
                     onChange={(e) => setTempOn(e.target.checked)}
-                    className="h-4 w-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
+                    className="h-4 w-4 rounded border-line text-espresso focus:ring-espresso"
                   />
                   Record water temp
                 </label>
                 {tempOn && (
-                  <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30">
+                  <div className="mt-1 flex items-center rounded-lg border border-line bg-surface focus-within:border-espresso focus-within:ring-2 focus-within:ring-espresso/30">
                     <input
                       type="number"
                       value={waterTempC}
@@ -587,7 +587,7 @@ export default function App() {
                       onWheel={(e) => e.currentTarget.blur()}
                       className="w-full rounded-lg bg-transparent px-3 py-2 outline-none"
                     />
-                    <span className="px-3 text-sm text-stone-500">°C</span>
+                    <span className="px-3 text-sm text-muted">°C</span>
                   </div>
                 )}
               </div>
@@ -595,13 +595,13 @@ export default function App() {
           </section>
 
           {/* Results */}
-          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Recipe</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Recipe</h2>
               {result.valid && (
                 <button
                   onClick={copyRecipe}
-                  className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 hover:border-amber-600 hover:text-amber-800"
+                  className="rounded-lg border border-line px-3 py-1 text-xs font-medium text-roast hover:border-espresso hover:text-espresso-700"
                 >
                   {copied ? '✓ Copied' : 'Copy recipe'}
                 </button>
@@ -609,29 +609,29 @@ export default function App() {
             </div>
 
             {/* Brew Timer controls (PRD §6.6) */}
-            <div className="mb-4 flex items-center gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2">
-              <span className="font-mono text-2xl font-bold tabular-nums text-stone-900">{fmt(timer.elapsed)}</span>
+            <div className="mb-4 flex items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2">
+              <span className="font-mono text-2xl font-bold tabular-nums text-roast">{fmt(timer.elapsed)}</span>
               <div className="ml-auto flex gap-2">
                 {timer.running ? (
-                  <button onClick={() => timer.stop(terminalKey)} className="rounded-lg bg-stone-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-800">
+                  <button onClick={() => timer.stop(terminalKey)} className="rounded-lg bg-roast px-3 py-1.5 text-sm font-medium text-white hover:bg-roast">
                     Stop
                   </button>
                 ) : (
-                  <button onClick={timer.start} className="rounded-lg bg-amber-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-800">
+                  <button onClick={timer.start} className="rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-white hover:bg-espresso-700">
                     Start
                   </button>
                 )}
-                <button onClick={timer.reset} className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-medium text-stone-700 hover:border-stone-400">
+                <button onClick={timer.reset} className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-roast hover:border-muted">
                   Reset
                 </button>
               </div>
             </div>
 
             {!shown ? (
-              <div className="rounded-lg border border-stone-200 bg-stone-50 p-4 text-sm text-stone-500">
+              <div className="rounded-lg border border-line bg-surface p-4 text-sm text-muted">
                 Enter a coffee dose to see your recipe.
                 {unmappedErrors.length > 0 && (
-                  <ul className="mt-2 list-inside list-disc text-amber-800">
+                  <ul className="mt-2 list-inside list-disc text-espresso-700">
                     {unmappedErrors.map((e, i) => <li key={i}>{e.message}</li>)}
                   </ul>
                 )}
@@ -639,7 +639,7 @@ export default function App() {
             ) : (
               <div className={result.valid ? '' : 'opacity-60'}>
                 {!result.valid && (
-                  <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <div className="mb-3 rounded-lg border border-espresso/30 bg-tint px-3 py-2 text-xs text-espresso-700">
                     Showing your last valid recipe — fix the highlighted inputs to update.
                     {unmappedErrors.length > 0 && (
                       <ul className="mt-1 list-inside list-disc">
@@ -661,7 +661,7 @@ export default function App() {
                 <div className="max-h-80 overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-stone-200 text-left text-stone-500">
+                      <tr className="border-b border-line text-left text-muted">
                         <th className="py-2 font-medium">Step</th>
                         <th className="py-2 text-right font-medium">Add (g)</th>
                         <th className="py-2 text-right font-medium">Reads (g)</th>
@@ -675,8 +675,8 @@ export default function App() {
                             const isTerminal = ls.key === terminalKey
                             const placeholder = isTerminal ? 'on stop' : ls.key === 'bloom' ? bloomTime || '00:30' : 'mm:ss'
                             return (
-                              <tr key={ls.key} className="border-b border-stone-100 last:border-0">
-                                <td className="py-2 font-medium text-stone-800">{ls.label}</td>
+                              <tr key={ls.key} className="border-b border-cream last:border-0">
+                                <td className="py-2 font-medium text-roast">{ls.label}</td>
                                 <td className="py-2 text-right tabular-nums">{step ? `+${step.add}` : '—'}</td>
                                 <td className="py-2 text-right font-semibold tabular-nums">{step ? step.cumulative : '—'}</td>
                                 <td className="py-2 pl-2">
@@ -685,7 +685,7 @@ export default function App() {
                                       <button
                                         onClick={() => timer.lap(ls.key)}
                                         title={`Lap ${ls.label}`}
-                                        className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                                        className="rounded border border-espresso/40 bg-tint px-1.5 py-0.5 text-[11px] font-medium text-espresso-700 hover:bg-espresso/15"
                                       >
                                         Lap
                                       </button>
@@ -695,7 +695,7 @@ export default function App() {
                                       value={timer.laps[ls.key] ?? ''}
                                       placeholder={placeholder}
                                       onChange={(e) => timer.editLap(ls.key, e.target.value)}
-                                      className="w-14 rounded border border-stone-300 px-1 py-0.5 text-center font-mono text-xs tabular-nums outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                                      className="w-14 rounded border border-line px-1 py-0.5 text-center font-mono text-xs tabular-nums outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
                                     />
                                   </div>
                                 </td>
@@ -703,8 +703,8 @@ export default function App() {
                             )
                           })
                         : shown.steps.map((s, i) => (
-                            <tr key={i} className="border-b border-stone-100 last:border-0">
-                              <td className="py-2 font-medium text-stone-800">{s.label}</td>
+                            <tr key={i} className="border-b border-cream last:border-0">
+                              <td className="py-2 font-medium text-roast">{s.label}</td>
                               <td className="py-2 text-right tabular-nums">+{s.add}</td>
                               <td className="py-2 text-right font-semibold tabular-nums">{s.cumulative}</td>
                             </tr>
@@ -714,14 +714,14 @@ export default function App() {
                 </div>
 
                 {shown.instrument === 'filter' && (
-                  <div className="mt-4 space-y-2 text-sm text-stone-600">
+                  <div className="mt-4 space-y-2 text-sm text-muted">
                     <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">⚠️ Remove the tamper / metal disk before brewing.</p>
                     <p>🌀 Main pour: spiral from center, swirl, lid on.</p>
                     {shown.method === 'with-milk' && (
-                      <p>🥛 Heat &amp; serve <span className="font-semibold text-stone-800">{shown.milk} g</span> milk alongside the decoction.</p>
+                      <p>🥛 Heat &amp; serve <span className="font-semibold text-roast">{shown.milk} g</span> milk alongside the decoction.</p>
                     )}
                     {shown.method === 'with-water' && (
-                      <p>💧 Dilute the decoction with <span className="font-semibold text-stone-800">{shown.dilutionWater} g</span> hot water to taste.</p>
+                      <p>💧 Dilute the decoction with <span className="font-semibold text-roast">{shown.dilutionWater} g</span> hot water to taste.</p>
                     )}
                     <p>🌡️ Water 80–85 °C · expected drawdown 7–10 min.</p>
                   </div>
@@ -729,12 +729,12 @@ export default function App() {
 
                 {/* Save to logbook — requires sign-in (Phase 2 multi-user) */}
                 {result.valid && (
-                <div className="mt-4 border-t border-stone-100 pt-4">
+                <div className="mt-4 border-t border-cream pt-4">
                   {user ? (
                     <>
                       <div className="flex items-end gap-3">
                         <label className="block">
-                          <span className="block text-xs font-medium text-stone-600">Rating /10 <span className="text-stone-400">(optional)</span></span>
+                          <span className="block text-xs font-medium text-muted">Rating /10 <span className="text-muted">(optional)</span></span>
                           <input
                             type="number"
                             min="0"
@@ -743,36 +743,36 @@ export default function App() {
                             onChange={(e) => setRating(e.target.value)}
                             onWheel={(e) => e.currentTarget.blur()}
                             placeholder="—"
-                            className="mt-1 w-20 rounded-lg border border-stone-300 px-2 py-1 text-sm outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                            className="mt-1 w-20 rounded-lg border border-line px-2 py-1 text-sm outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
                           />
                         </label>
                       </div>
                       <label className="mt-2 block">
-                        <span className="block text-xs font-medium text-stone-600">Tasting notes <span className="text-stone-400">(optional)</span></span>
+                        <span className="block text-xs font-medium text-muted">Tasting notes <span className="text-muted">(optional)</span></span>
                         <textarea
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
                           rows={2}
                           placeholder="e.g. bright, juicy, slightly sweet"
-                          className="mt-1 w-full rounded-lg border border-stone-300 px-2 py-1 text-sm outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
+                          className="mt-1 w-full rounded-lg border border-line px-2 py-1 text-sm outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
                         />
                       </label>
                       <div className="mt-2 flex items-center gap-3">
                         <button
                           onClick={handleSave}
                           disabled={saveStatus === 'saving'}
-                          className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-50"
+                          className="rounded-lg bg-espresso px-4 py-2 text-sm font-medium text-white hover:bg-espresso-700 disabled:opacity-50"
                         >
                           {saveStatus === 'saving' ? 'Saving…' : 'Save to Logbook'}
                         </button>
                         {saveStatus === 'saved' && <span className="text-sm font-medium text-green-700">✓ Saved</span>}
-                        {saveStatus === 'warn' && <span className="text-sm font-medium text-amber-700">{saveError}</span>}
+                        {saveStatus === 'warn' && <span className="text-sm font-medium text-espresso">{saveError}</span>}
                         {saveStatus === 'error' && <span className="text-sm text-red-600">{saveError}</span>}
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-stone-600">
-                      <button onClick={() => setAuthOpen(true)} className="font-medium text-amber-700 hover:underline">Sign in</button> to save this brew to your logbook.
+                    <p className="text-sm text-muted">
+                      <button onClick={() => setAuthOpen(true)} className="font-medium text-espresso hover:underline">Sign in</button> to save this brew to your logbook.
                     </p>
                   )}
                 </div>
@@ -780,13 +780,13 @@ export default function App() {
               </div>
             )}
 
-            <p className="mt-4 text-xs text-stone-400">Values rounded to whole grams.</p>
+            <p className="mt-4 text-xs text-muted">Values rounded to whole grams.</p>
           </section>
         </div>
           </>
         )}
 
-        <footer className="mt-8 text-center text-xs text-stone-400">
+        <footer className="mt-8 text-center text-xs text-muted">
           Coffee Brewing Calculator · v2
         </footer>
       </div>

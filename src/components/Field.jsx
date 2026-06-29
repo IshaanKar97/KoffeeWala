@@ -1,16 +1,16 @@
 export default function Field({ label, value, onChange, placeholder, hint, suffix, step = '1', min = '0', inputMode = 'decimal', disabled = false, error, warning }) {
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-stone-700">{label}</span>
+      <span className="block text-sm font-medium text-roast">{label}</span>
       <div
         className={`mt-1 flex items-center rounded-lg border ${
           error
-            ? 'border-red-400 bg-white focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/30'
+            ? 'border-red-400 bg-surface focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/30'
             : warning
-              ? 'border-amber-400 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30'
+              ? 'border-espresso bg-surface focus-within:border-espresso focus-within:ring-2 focus-within:ring-espresso/30'
               : disabled
-                ? 'border-stone-200 bg-stone-100'
-                : 'border-stone-300 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30'
+                ? 'border-line bg-cream'
+                : 'border-line bg-surface focus-within:border-espresso focus-within:ring-2 focus-within:ring-espresso/30'
         }`}
       >
         <input
@@ -23,16 +23,16 @@ export default function Field({ label, value, onChange, placeholder, hint, suffi
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           onWheel={(e) => e.currentTarget.blur()}
-          className={`w-full rounded-lg bg-transparent px-3 py-2 outline-none placeholder:text-stone-400 ${disabled ? 'text-stone-400' : 'text-stone-900'}`}
+          className={`w-full rounded-lg bg-transparent px-3 py-2 outline-none placeholder:text-muted ${disabled ? 'text-muted' : 'text-roast'}`}
         />
-        {suffix && <span className={`px-3 text-sm ${disabled ? 'text-stone-400' : 'text-stone-500'}`}>{suffix}</span>}
+        {suffix && <span className={`px-3 text-sm ${disabled ? 'text-muted' : 'text-muted'}`}>{suffix}</span>}
       </div>
       {error ? (
         <span className="mt-1 block text-xs text-red-600">{error}</span>
       ) : warning ? (
-        <span className="mt-1 block text-xs text-amber-700">{warning}</span>
+        <span className="mt-1 block text-xs text-espresso">{warning}</span>
       ) : hint ? (
-        <span className="mt-1 block text-xs text-stone-500">{hint}</span>
+        <span className="mt-1 block text-xs text-muted">{hint}</span>
       ) : null}
     </label>
   )
@@ -47,13 +47,46 @@ export function Toggle({ checked, onChange, label }) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 text-sm font-medium text-stone-700"
+      className="flex items-center gap-2 text-sm font-medium text-roast"
     >
-      <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${checked ? 'bg-amber-700' : 'bg-stone-300'}`}>
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${checked ? 'bg-espresso' : 'bg-line'}`}>
+        <span className={`inline-block h-4 w-4 transform rounded-full bg-surface shadow transition ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
       </span>
       {label}
     </button>
+  )
+}
+
+/** Pill stepper (− value + ) for a numeric value — mobile-friendly, still typeable. */
+export function Stepper({ label, value, onChange, suffix, step = 1, min = 0, error, warning, hint }) {
+  const n = parseFloat(value)
+  const cur = Number.isFinite(n) ? n : 0
+  const set = (v) => onChange(String(Math.max(min, Math.round(v * 100) / 100)))
+  const btn = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xl font-semibold text-espresso transition hover:bg-tint disabled:opacity-40 disabled:hover:bg-transparent'
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-roast">{label}</span>
+      <div className={`mt-1 flex items-center justify-between rounded-full border bg-surface px-1.5 py-1 ${error ? 'border-red-400' : warning ? 'border-espresso' : 'border-line'}`}>
+        <button type="button" aria-label="decrease" onClick={() => set(cur - step)} disabled={cur - step < min} className={btn}>−</button>
+        <span className="flex items-baseline gap-1">
+          <input
+            type="number" inputMode="decimal" value={value} placeholder="0"
+            onChange={(e) => onChange(e.target.value)} onWheel={(e) => e.currentTarget.blur()}
+            className="w-14 bg-transparent text-center text-lg font-semibold text-roast outline-none"
+            aria-label={label}
+          />
+          {suffix && <span className="text-sm text-muted">{suffix}</span>}
+        </span>
+        <button type="button" aria-label="increase" onClick={() => set(cur + step)} className={btn}>+</button>
+      </div>
+      {error ? (
+        <span className="mt-1 block text-xs text-red-600">{error}</span>
+      ) : warning ? (
+        <span className="mt-1 block text-xs text-espresso">{warning}</span>
+      ) : hint ? (
+        <span className="mt-1 block text-xs text-muted">{hint}</span>
+      ) : null}
+    </label>
   )
 }
 
@@ -75,11 +108,11 @@ export function fmtTime(m, s) {
  *  numeric keypad, no colon typing, no ambiguous "1:5". */
 export function TimeField({ label, value, onChange, hint }) {
   const { m, s } = parseTime(value)
-  const box = 'flex items-center rounded-lg border border-stone-300 bg-white focus-within:border-amber-600 focus-within:ring-2 focus-within:ring-amber-600/30'
-  const inp = 'w-12 rounded-lg bg-transparent px-2 py-2 text-center text-stone-900 outline-none'
+  const box = 'flex items-center rounded-lg border border-line bg-surface focus-within:border-espresso focus-within:ring-2 focus-within:ring-espresso/30'
+  const inp = 'w-12 rounded-lg bg-transparent px-2 py-2 text-center text-roast outline-none'
   return (
     <label className="block">
-      <span className="block text-sm font-medium text-stone-700">{label}</span>
+      <span className="block text-sm font-medium text-roast">{label}</span>
       <div className="mt-1 flex items-center gap-2">
         <div className={box}>
           <input
@@ -88,9 +121,9 @@ export function TimeField({ label, value, onChange, hint }) {
             onWheel={(e) => e.currentTarget.blur()}
             className={inp} aria-label={`${label} minutes`}
           />
-          <span className="pr-2 text-xs text-stone-500">min</span>
+          <span className="pr-2 text-xs text-muted">min</span>
         </div>
-        <span className="text-stone-400">:</span>
+        <span className="text-muted">:</span>
         <div className={box}>
           <input
             type="number" inputMode="numeric" min="0" max="59" value={s}
@@ -98,10 +131,10 @@ export function TimeField({ label, value, onChange, hint }) {
             onWheel={(e) => e.currentTarget.blur()}
             className={inp} aria-label={`${label} seconds`}
           />
-          <span className="pr-2 text-xs text-stone-500">sec</span>
+          <span className="pr-2 text-xs text-muted">sec</span>
         </div>
       </div>
-      {hint && <span className="mt-1 block text-xs text-stone-500">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-muted">{hint}</span>}
     </label>
   )
 }
