@@ -48,6 +48,12 @@ function lapStepsFor(instrument, pourCount) {
   return steps
 }
 
+// App sections — side nav (desktop) / bottom nav (mobile).
+const NAV_ITEMS = [
+  { id: 'calculator', label: 'Brew', icon: '☕' },
+  { id: 'logbook', label: 'Logbook', icon: '📖' },
+]
+
 const num = (s) => (s == null || String(s).trim() === '' ? undefined : parseFloat(s))
 const round2 = (x) => Math.round(x * 100) / 100
 
@@ -382,45 +388,59 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-cream text-roast">
-      <div className={`mx-auto px-4 py-8 ${view === 'logbook' ? 'max-w-5xl' : 'max-w-3xl'}`}>
-        <header className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">☕ Coffee Brewing Calculator</h1>
-            <p className="mt-1 text-muted">
-              Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.
-            </p>
-          </div>
-          <div className="shrink-0 pt-1 text-right text-sm">
-            {user ? (
-              <div className="flex flex-col items-end gap-1">
-                <span className="max-w-[12rem] truncate text-muted" title={user.email}>{user.email}</span>
-                <button onClick={signOut} className="text-xs font-medium text-espresso hover:text-espresso-700">Sign out</button>
-              </div>
-            ) : (
-              <button onClick={() => setAuthOpen(true)} className="rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-white hover:bg-espresso-700">
-                Sign in
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* View toggle: Calculator / Logbook */}
-        <div className="mb-6 flex gap-1 border-b border-line">
-          {[
-            ['calculator', 'Calculator'],
-            ['logbook', 'Logbook'],
-          ].map(([id, label]) => (
+      {/* Desktop side navigation */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col border-r border-line bg-surface px-4 py-6 md:flex">
+        <div className="mb-8 flex items-center gap-2 px-1">
+          <span className="text-2xl">☕</span>
+          <span className="text-lg font-bold tracking-tight">KoffeeWala</span>
+        </div>
+        <nav className="flex flex-col gap-1">
+          {NAV_ITEMS.map((it) => (
             <button
-              key={id}
-              onClick={() => setView(id)}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
-                view === id ? 'border-espresso text-espresso-700' : 'border-transparent text-muted hover:text-roast'
-              }`}
+              key={it.id}
+              onClick={() => setView(it.id)}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${view === it.id ? 'bg-espresso text-white' : 'text-roast hover:bg-tint'}`}
             >
-              {label}
+              <span className="text-base">{it.icon}</span>
+              {it.label}
             </button>
           ))}
+        </nav>
+        <div className="mt-auto border-t border-line pt-4">
+          {user ? (
+            <div className="space-y-1 text-sm">
+              <p className="truncate text-muted" title={user.email}>{user.email}</p>
+              <button onClick={signOut} className="text-xs font-medium text-espresso hover:text-espresso-700">Sign out</button>
+            </div>
+          ) : (
+            <button onClick={() => setAuthOpen(true)} className="w-full rounded-lg bg-espresso px-3 py-2 text-sm font-medium text-white hover:bg-espresso-700">
+              Sign in
+            </button>
+          )}
         </div>
+      </aside>
+
+      {/* Main content — full width, 48px gap after the side nav */}
+      <main className="px-4 pb-24 pt-6 md:ml-56 md:pb-10 md:pl-12 md:pr-8 md:pt-8">
+        {/* Mobile top bar: brand + account */}
+        <div className="mb-5 flex items-center justify-between md:hidden">
+          <span className="flex items-center gap-2 text-lg font-bold"><span className="text-xl">☕</span>KoffeeWala</span>
+          {user ? (
+            <button onClick={signOut} className="text-xs font-medium text-espresso">Sign out</button>
+          ) : (
+            <button onClick={() => setAuthOpen(true)} className="rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-white">Sign in</button>
+          )}
+        </div>
+
+        {/* Page heading (desktop) */}
+        <header className="mb-6 hidden md:block">
+          <h1 className="text-2xl font-bold tracking-tight">{view === 'logbook' ? 'Logbook' : 'Brew Calculator'}</h1>
+          <p className="mt-1 text-sm text-muted">
+            {view === 'logbook'
+              ? 'Your saved brews — filter, review, edit, or brew again.'
+              : 'Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.'}
+          </p>
+        </header>
 
         {view === 'logbook' &&
           (user ? (
@@ -786,10 +806,23 @@ export default function App() {
           </>
         )}
 
-        <footer className="mt-8 text-center text-xs text-muted">
-          Coffee Brewing Calculator · v2
-        </footer>
-      </div>
+        <footer className="mt-8 text-center text-xs text-muted">KoffeeWala · v2</footer>
+      </main>
+
+      {/* Mobile bottom navigation */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface md:hidden">
+        {NAV_ITEMS.map((it) => (
+          <button
+            key={it.id}
+            onClick={() => setView(it.id)}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium ${view === it.id ? 'text-espresso' : 'text-muted'}`}
+          >
+            <span className="text-lg">{it.icon}</span>
+            {it.label}
+          </button>
+        ))}
+      </nav>
+
       {authOpen && <AuthPanel onClose={() => setAuthOpen(false)} />}
     </div>
   )

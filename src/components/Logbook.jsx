@@ -122,40 +122,47 @@ function Chip({ active, onClick, children }) {
   )
 }
 
+// A labelled category dropdown (native select, themed).
+function FilterDropdown({ label, value, onChange, options }) {
+  const active = value !== String(options[0][0])
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs ${active ? 'border-espresso bg-tint' : 'border-line bg-surface'}`}>
+      <span className="text-muted">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="bg-transparent font-medium text-roast outline-none">
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </span>
+  )
+}
+
 function Filters({ filters, setFilters }) {
   const set = (patch) => setFilters((f) => ({ ...f, ...patch }))
   const setDate = (patch) => setFilters((f) => ({ ...f, date: { ...f.date, ...patch } }))
+  // Quick chips toggle their filter on/off (ice pair is mutually exclusive).
+  const toggleIce = (v) => set({ ice: filters.ice === v ? 'all' : v })
+  const toggle7d = () => setDate({ mode: filters.date.mode === '7d' ? 'all' : '7d' })
+  const toggleFilterInst = () => set({ instrument: filters.instrument === 'filter' ? 'all' : 'filter' })
   return (
-    <div className="mb-3 space-y-2 rounded-lg border border-line bg-surface p-2.5">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted">Instrument</span>
-        <Chip active={filters.instrument === 'all'} onClick={() => set({ instrument: 'all' })}>All</Chip>
-        <Chip active={filters.instrument === 'v60'} onClick={() => set({ instrument: 'v60' })}>V60</Chip>
-        <Chip active={filters.instrument === 'filter'} onClick={() => set({ instrument: 'filter' })}>Filter</Chip>
-        <span className="ml-3 mr-1 text-xs font-medium uppercase tracking-wide text-muted">Ice</span>
-        <Chip active={filters.ice === 'all'} onClick={() => set({ ice: 'all' })}>All</Chip>
-        <Chip active={filters.ice === 'with'} onClick={() => set({ ice: 'with' })}>Ice</Chip>
-        <Chip active={filters.ice === 'without'} onClick={() => set({ ice: 'without' })}>No ice</Chip>
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted">Rating</span>
-        {RATING_STEPS.map((r) => (
-          <Chip key={r} active={filters.ratingMin === r} onClick={() => set({ ratingMin: r })}>{r}+</Chip>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted">Date</span>
-        {[['all', 'All'], ['today', 'Today'], ['7d', 'Last 7d'], ['30d', 'Last 30d'], ['custom', 'Custom']].map(([m, label]) => (
-          <Chip key={m} active={filters.date.mode === m} onClick={() => setDate({ mode: m })}>{label}</Chip>
-        ))}
-        {filters.date.mode === 'custom' && (
-          <span className="flex items-center gap-1 text-xs text-muted">
-            <input type="date" value={filters.date.from} onChange={(e) => setDate({ from: e.target.value })} className="rounded border border-line px-1.5 py-0.5 outline-none focus:border-espresso" />
-            <span>→</span>
-            <input type="date" value={filters.date.to} onChange={(e) => setDate({ to: e.target.value })} className="rounded border border-line px-1.5 py-0.5 outline-none focus:border-espresso" />
-          </span>
-        )}
-      </div>
+    <div className="mb-4 flex flex-wrap items-center gap-1.5">
+      {/* Quick filters (chips) */}
+      <Chip active={filters.ice === 'with'} onClick={() => toggleIce('with')}>With ice</Chip>
+      <Chip active={filters.ice === 'without'} onClick={() => toggleIce('without')}>Without ice</Chip>
+      <Chip active={filters.date.mode === '7d'} onClick={toggle7d}>Last 7 days</Chip>
+      <Chip active={filters.instrument === 'filter'} onClick={toggleFilterInst}>Filter coffee</Chip>
+
+      <span className="mx-1 h-4 w-px bg-line" />
+
+      {/* Category dropdowns (full control) */}
+      <FilterDropdown label="Instrument" value={filters.instrument} onChange={(v) => set({ instrument: v })} options={[['all', 'All'], ['v60', 'V60'], ['filter', 'Filter Coffee']]} />
+      <FilterDropdown label="Rating" value={String(filters.ratingMin)} onChange={(v) => set({ ratingMin: Number(v) })} options={[['0', 'Any'], ...RATING_STEPS.filter((r) => r > 0).map((r) => [String(r), `${r}+`])]} />
+      <FilterDropdown label="Date" value={filters.date.mode} onChange={(v) => setDate({ mode: v })} options={[['all', 'All'], ['today', 'Today'], ['7d', 'Last 7d'], ['30d', 'Last 30d'], ['custom', 'Custom']]} />
+      {filters.date.mode === 'custom' && (
+        <span className="flex items-center gap-1 text-xs text-muted">
+          <input type="date" value={filters.date.from} onChange={(e) => setDate({ from: e.target.value })} className="rounded border border-line bg-surface px-1.5 py-0.5 outline-none focus:border-espresso" />
+          <span>→</span>
+          <input type="date" value={filters.date.to} onChange={(e) => setDate({ to: e.target.value })} className="rounded border border-line bg-surface px-1.5 py-0.5 outline-none focus:border-espresso" />
+        </span>
+      )}
     </div>
   )
 }
@@ -462,7 +469,6 @@ export default function Logbook({ onRebrew }) {
   const [selectedId, setSelectedId] = useState(null)
   const [pageSize, setPageSize] = useState(loadPageSize)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [showFilters, setShowFilters] = useState(false) // mobile filter collapse (D5)
   const [visibleCols, setVisibleCols] = useState(loadColumns)
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, ...(user?.user_metadata?.logbook_filters || {}) }))
   const filtersKey = JSON.stringify(filters)
@@ -517,13 +523,6 @@ export default function Logbook({ onRebrew }) {
     : Math.min(Math.round(viewportH * 0.62), brews.length * rowHeight + 12)
   const rowProps = { brews, selectedId, onSelect: setSelectedId, columns, gridTemplate, isDesktop }
 
-  // Active (non-default) chip-filter count, for the mobile collapse (D5).
-  const activeFilterCount =
-    (filters.instrument !== 'all' ? 1 : 0) +
-    (filters.ice !== 'all' ? 1 : 0) +
-    (filters.ratingMin > 0 ? 1 : 0) +
-    (filters.date.mode !== 'all' ? 1 : 0)
-
   return (
     <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -542,21 +541,7 @@ export default function Logbook({ onRebrew }) {
         <Detail brew={selected} onClose={() => setSelectedId(null)} onRebrew={onRebrew} onSaved={refresh} />
       ) : (
         <>
-          {/* Filters: inline on desktop; collapsed behind a button on mobile (D5). */}
-          {isDesktop ? (
-            <Filters filters={filters} setFilters={setFilters} />
-          ) : (
-            <div className="mb-3">
-              <button
-                onClick={() => setShowFilters((o) => !o)}
-                className="flex w-full items-center justify-between rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-roast"
-              >
-                <span>Filters{activeFilterCount > 0 ? <span className="ml-1.5 rounded-full bg-espresso px-1.5 py-0.5 text-xs text-white">{activeFilterCount}</span> : ''}</span>
-                <span className="text-muted">{showFilters ? '▲' : '▼'}</span>
-              </button>
-              {showFilters && <div className="mt-2"><Filters filters={filters} setFilters={setFilters} /></div>}
-            </div>
-          )}
+          <Filters filters={filters} setFilters={setFilters} />
 
           {status === 'loading' && <p className="text-sm text-muted">Loading your brews…</p>}
 
