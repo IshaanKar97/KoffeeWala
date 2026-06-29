@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { calculate, defaultBloom, DEFAULTS, V60_POURS } from './lib/calculations.js'
-import Field, { TimeField } from './components/Field.jsx'
+import Field, { TimeField, Toggle } from './components/Field.jsx'
 import { useBrewTimer, fmt } from './lib/useBrewTimer.js'
 import { saveBrew } from './lib/logbook.js'
 import Logbook from './components/Logbook.jsx'
@@ -67,7 +67,7 @@ const DEFAULT_STATE = {
   milkRatio: '3',
   dilutionRatio: '4',
   bloomTime: '00:30',
-  grind: '14 clicks',
+  grind: '',
   tempOn: false,
   waterTempC: '95',
 }
@@ -187,6 +187,31 @@ export default function App() {
     return keys
   }, [instrument, filterMethod, iceOn, isAdvanced])
   const unmappedErrors = result.valid ? [] : result.errors.filter((e) => !visibleFieldKeys.has(e.field))
+
+  // Soft warnings (D2): flag atypical-but-valid values without blocking the recipe.
+  const fieldWarnings = useMemo(() => {
+    const w = {}
+    const out = (v, lo, hi) => v != null && (v < lo || v > hi)
+    if (instrument === 'v60') {
+      const r = num(ratio)
+      if (out(r, 13, 20)) w.ratio = 'Unusual ratio — most V60 recipes are 15–18×.'
+      if (iceOn) {
+        const f = num(iceFactor)
+        if (out(f, 0.25, 0.55)) w.iceFactor = 'Unusual — ice factor is typically 0.3–0.5×.'
+      }
+    } else {
+      const wr = num(waterRatio)
+      if (out(wr, 3, 8)) w.waterRatio = 'Unusual — decoction water ratio is typically 4–6×.'
+      if (filterMethod === 'with-milk') {
+        const mr = num(milkRatio)
+        if (out(mr, 1, 5)) w.milkRatio = 'Unusual — milk ratio is typically 2–4×.'
+      } else {
+        const dr = num(dilutionRatio)
+        if (out(dr, 2, 6)) w.dilutionRatio = 'Unusual — dilution ratio is typically 3–5×.'
+      }
+    }
+    return w
+  }, [instrument, filterMethod, ratio, iceOn, iceFactor, waterRatio, milkRatio, dilutionRatio])
 
   // Persist inputs across sessions.
   useEffect(() => {
@@ -357,7 +382,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-100 to-stone-200 text-stone-900">
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className={`mx-auto px-4 py-8 ${view === 'logbook' ? 'max-w-5xl' : 'max-w-3xl'}`}>
         <header className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">☕ Coffee Brewing Calculator</h1>
@@ -412,32 +437,33 @@ export default function App() {
         {view === 'calculator' && (
           <>
             {/* Instrument selector */}
-            <div className="mb-3">
+            <div className="mb-2">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">Instrument</span>
-              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
-                {INSTRUMENTS.map((ins) => (
-                  <button
-                    key={ins.id}
-                    onClick={() => !ins.disabled && setInstrument(ins.id)}
-                    disabled={ins.disabled}
-                    title={ins.disabled ? 'Coming soon' : undefined}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                      ins.disabled
-                        ? 'cursor-not-allowed text-stone-400'
-                        : instrument === ins.id
-                          ? 'bg-amber-700 text-white shadow'
-                          : 'text-stone-600 hover:text-stone-900'
-                    }`}
-                  >
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
+                  {INSTRUMENTS.filter((ins) => !ins.disabled).map((ins) => (
+                    <button
+                      key={ins.id}
+                      onClick={() => setInstrument(ins.id)}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                        instrument === ins.id ? 'bg-amber-700 text-white shadow' : 'text-stone-600 hover:text-stone-900'
+                      }`}
+                    >
+                      {ins.label}
+                    </button>
+                  ))}
+                </div>
+                {INSTRUMENTS.filter((ins) => ins.disabled).map((ins) => (
+                  <span key={ins.id} title="Coming soon" className="inline-flex cursor-not-allowed items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-stone-400">
                     {ins.label}
-                    {ins.disabled && <span className="ml-1.5 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-stone-500">Soon</span>}
-                  </button>
+                    <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-stone-500">Soon</span>
+                  </span>
                 ))}
               </div>
             </div>
 
             {/* Brewing method selector */}
-            <div className="mb-6">
+            <div className="mb-5">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">Brewing method</span>
               <div className="inline-flex flex-wrap gap-1 rounded-xl border border-stone-300 bg-white p-1 shadow-sm">
                 {(instrument === 'v60' ? V60_METHODS : FILTER_METHODS).map((m) => {
@@ -453,17 +479,11 @@ export default function App() {
                     </button>
                   )
                 })}
-                {/* Ice toggle — V60 only, applies to every method */}
+                {/* Ice — a mode-altering switch (recomputes the recipe), V60 only */}
                 {instrument === 'v60' && (
-                  <label className="ml-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-stone-700">
-                    <input
-                      type="checkbox"
-                      checked={iceOn}
-                      onChange={(e) => setIceOn(e.target.checked)}
-                      className="h-4 w-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
-                    />
-                    Ice
-                  </label>
+                  <span className="ml-1 flex items-center px-3 py-2">
+                    <Toggle checked={iceOn} onChange={setIceOn} label="Iced" />
+                  </span>
                 )}
               </div>
             </div>
@@ -482,11 +502,11 @@ export default function App() {
 
               {instrument === 'filter' ? (
                 <>
-                  <Field label="Water ratio" value={waterRatio} onChange={setWaterRatio} suffix="×" hint="Decoction water = dose × ratio (default 5)" error={fieldErrors.waterRatio} />
+                  <Field label="Water ratio" value={waterRatio} onChange={setWaterRatio} suffix="×" hint="Decoction water = dose × ratio · typical 4–6" error={fieldErrors.waterRatio} warning={fieldWarnings.waterRatio} />
                   {filterMethod === 'with-milk' ? (
-                    <Field label="Milk ratio" value={milkRatio} onChange={setMilkRatio} suffix="×" hint="Milk to serve = dose × ratio (default 3)" error={fieldErrors.milkRatio} />
+                    <Field label="Milk ratio" value={milkRatio} onChange={setMilkRatio} suffix="×" hint="Milk to serve = dose × ratio · typical 2–4" error={fieldErrors.milkRatio} warning={fieldWarnings.milkRatio} />
                   ) : (
-                    <Field label="Water (dilution) ratio" value={dilutionRatio} onChange={setDilutionRatio} suffix="×" hint="Dilution water = dose × ratio (default 4)" error={fieldErrors.dilutionRatio} />
+                    <Field label="Water (dilution) ratio" value={dilutionRatio} onChange={setDilutionRatio} suffix="×" hint="Dilution water = dose × ratio · typical 3–5" error={fieldErrors.dilutionRatio} warning={fieldWarnings.dilutionRatio} />
                   )}
                 </>
               ) : (
@@ -497,8 +517,9 @@ export default function App() {
                     onChange={setRatio}
                     suffix="×"
                     disabled={advOverride}
-                    hint={advOverride ? `Overridden by total water${computedRatio ? ` (≈ ${computedRatio}×)` : ''}` : isAdvanced ? 'Total = dose × ratio · or set total water below' : 'Total water = dose × ratio (default 16)'}
+                    hint={advOverride ? `Overridden by total water${computedRatio ? ` (≈ ${computedRatio}×)` : ''}` : isAdvanced ? 'Total = dose × ratio · or set total water below' : 'Total water = dose × ratio · typical 15–18'}
                     error={fieldErrors.ratio}
+                    warning={advOverride ? undefined : fieldWarnings.ratio}
                   />
                   {advOverride && (
                     <button onClick={() => setAdvTotal('')} className="-mt-2 block text-xs font-medium text-amber-700 hover:text-amber-900">
@@ -522,7 +543,9 @@ export default function App() {
                   )}
 
                   {iceOn && (
-                    <Field label="Ice factor" value={iceFactor} onChange={setIceFactor} step="0.05" suffix="×" hint="Ice = total water × factor (default 0.4)" error={fieldErrors.iceFactor} />
+                    <div className="reveal-field">
+                      <Field label="Ice factor" value={iceFactor} onChange={setIceFactor} step="0.05" suffix="×" hint="Ice = total water × factor · typical 0.3–0.5" error={fieldErrors.iceFactor} warning={fieldWarnings.iceFactor} />
+                    </div>
                   )}
                 </>
               )}
@@ -533,14 +556,15 @@ export default function App() {
 
               {instrument === 'v60' && (
                 <label className="block">
-                  <span className="block text-sm font-medium text-stone-700">Grind size</span>
+                  <span className="block text-sm font-medium text-stone-700">Grind size <span className="font-normal text-stone-400">(optional)</span></span>
                   <input
                     type="text"
                     value={grind}
                     onChange={(e) => setGrind(e.target.value)}
-                    placeholder="e.g. 14 clicks"
+                    placeholder="e.g. 14 clicks · medium-fine"
                     className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/30"
                   />
+                  <span className="mt-1 block text-xs text-stone-500">Your grinder’s setting — saved as a note on the brew.</span>
                 </label>
               )}
 

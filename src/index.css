@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+/* Soft reveal for conditionally-shown inputs (e.g. Ice factor) so toggling a
+   mode doesn't make surrounding fields jump abruptly (UX debt D7). */
+@keyframes reveal-field {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal-field { animation: reveal-field 180ms ease-out; }

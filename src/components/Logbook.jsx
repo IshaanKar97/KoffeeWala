@@ -462,6 +462,7 @@ export default function Logbook({ onRebrew }) {
   const [selectedId, setSelectedId] = useState(null)
   const [pageSize, setPageSize] = useState(loadPageSize)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [showFilters, setShowFilters] = useState(false) // mobile filter collapse (D5)
   const [visibleCols, setVisibleCols] = useState(loadColumns)
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS, ...(user?.user_metadata?.logbook_filters || {}) }))
   const filtersKey = JSON.stringify(filters)
@@ -508,9 +509,20 @@ export default function Logbook({ onRebrew }) {
   const columns = ALL_COLUMNS.filter((c) => effectiveKeys.includes(c.key))
   const gridTemplate = columns.map((c) => c.width).join(' ')
 
-  const listHeight = isDesktop ? 460 : Math.round((typeof window !== 'undefined' ? window.innerHeight : 700) * 0.6)
   const rowHeight = isDesktop ? 44 : 116
+  // Adaptive height (D6): fit the rows, capped — no big empty area with few brews.
+  const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800
+  const listHeight = isDesktop
+    ? Math.min(460, Math.max(rowHeight * 2, brews.length * rowHeight + 8))
+    : Math.min(Math.round(viewportH * 0.62), brews.length * rowHeight + 12)
   const rowProps = { brews, selectedId, onSelect: setSelectedId, columns, gridTemplate, isDesktop }
+
+  // Active (non-default) chip-filter count, for the mobile collapse (D5).
+  const activeFilterCount =
+    (filters.instrument !== 'all' ? 1 : 0) +
+    (filters.ice !== 'all' ? 1 : 0) +
+    (filters.ratingMin > 0 ? 1 : 0) +
+    (filters.date.mode !== 'all' ? 1 : 0)
 
   return (
     <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -530,7 +542,21 @@ export default function Logbook({ onRebrew }) {
         <Detail brew={selected} onClose={() => setSelectedId(null)} onRebrew={onRebrew} onSaved={refresh} />
       ) : (
         <>
-          <Filters filters={filters} setFilters={setFilters} />
+          {/* Filters: inline on desktop; collapsed behind a button on mobile (D5). */}
+          {isDesktop ? (
+            <Filters filters={filters} setFilters={setFilters} />
+          ) : (
+            <div className="mb-3">
+              <button
+                onClick={() => setShowFilters((o) => !o)}
+                className="flex w-full items-center justify-between rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700"
+              >
+                <span>Filters{activeFilterCount > 0 ? <span className="ml-1.5 rounded-full bg-amber-700 px-1.5 py-0.5 text-xs text-white">{activeFilterCount}</span> : ''}</span>
+                <span className="text-stone-400">{showFilters ? '▲' : '▼'}</span>
+              </button>
+              {showFilters && <div className="mt-2"><Filters filters={filters} setFilters={setFilters} /></div>}
+            </div>
+          )}
 
           {status === 'loading' && <p className="text-sm text-stone-500">Loading your brews…</p>}
 
