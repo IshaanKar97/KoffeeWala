@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { calculate, defaultBloom, DEFAULTS, V60_POURS } from './lib/calculations.js'
 import Field, { TimeField, Toggle, Stepper } from './components/Field.jsx'
 import { useBrewTimer, fmt } from './lib/useBrewTimer.js'
 import { saveBrew } from './lib/logbook.js'
 import Logbook from './components/Logbook.jsx'
+import Equipment from './components/Equipment.jsx'
+import { GrindInput } from './components/Grind.jsx'
+import { defaultGrinder, DEFAULT_GRINDER_ID, grindSummary, micronsFromSummary } from './lib/grinders.js'
+import { supabase } from './lib/supabase.js'
 import { useAuth } from './context/AuthContext.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 
@@ -52,6 +56,7 @@ function lapStepsFor(instrument, pourCount) {
 const NAV_ITEMS = [
   { id: 'calculator', label: 'Brew', icon: '☕' },
   { id: 'logbook', label: 'Logbook', icon: '📖' },
+  { id: 'equipment', label: 'Equipment', icon: '⚙️' },
 ]
 
 const num = (s) => (s == null || String(s).trim() === '' ? undefined : parseFloat(s))
@@ -73,13 +78,15 @@ const DEFAULT_STATE = {
   milkRatio: '3',
   dilutionRatio: '4',
   bloomTime: '00:30',
-  grind: '',
+  grind: { format: 'clicks', microns: null }, // structured grind (see lib/grinders.js)
   tempOn: false,
   waterTempC: '95',
 }
 const loadState = () => {
   try {
-    return { ...DEFAULT_STATE, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}) }
+    const s = { ...DEFAULT_STATE, ...(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}) }
+    if (!s.grind || typeof s.grind !== 'object') s.grind = { ...DEFAULT_STATE.grind } // migrate old free-text grind
+    return s
   } catch {
     return { ...DEFAULT_STATE }
   }
@@ -122,6 +129,40 @@ export default function App() {
   const [lastSavedSig, setLastSavedSig] = useState('')
   const { user, signOut } = useAuth()
   const [authOpen, setAuthOpen] = useState(false)
+
+  // Grinders (per-account via Supabase user_metadata; default = Timemore C3S).
+  const [grinders, setGrinders] = useState([defaultGrinder()])
+  const [activeGrinderId, setActiveGrinderId] = useState(DEFAULT_GRINDER_ID)
+  // Load the signed-in user's grinders on sign-in.
+  useEffect(() => {
+    const meta = user?.user_metadata
+    if (meta?.grinders && Array.isArray(meta.grinders) && meta.grinders.length) setGrinders(meta.grinders)
+    if (meta?.activeGrinderId) setActiveGrinderId(meta.activeGrinderId)
+  }, [user])
+  // Persist grinders per account (debounced), when signed in.
+  const grindersKey = JSON.stringify({ grinders, activeGrinderId })
+  const firstGrinderRun = useRef(true)
+  useEffect(() => {
+    if (firstGrinderRun.current) { firstGrinderRun.current = false; return }
+    if (!user) return
+    const t = setTimeout(() => {
+      supabase.auth.updateUser({ data: { grinders, activeGrinderId } }).catch(() => {})
+    }, 800)
+    return () => clearTimeout(t)
+  }, [grindersKey, user]) // eslint-disable-line react-hooks/exhaustive-deps
+  const activeGrinder = grinders.find((g) => g.id === activeGrinderId) || grinders[0] || defaultGrinder()
+  const addGrinder = (g) => {
+    setGrinders((prev) => (prev.some((x) => x.id === g.id) ? prev : [...prev, g]))
+    setActiveGrinderId(g.id)
+  }
+  const removeGrinder = (id) => {
+    setGrinders((prev) => {
+      const next = prev.filter((x) => x.id !== id)
+      const list = next.length ? next : [defaultGrinder()]
+      if (activeGrinderId === id) setActiveGrinderId(list[0].id)
+      return list
+    })
+  }
 
   const method = instrument === 'v60' ? v60Method : filterMethod
   const isAdvanced = instrument === 'v60' && v60Method === 'advanced'
@@ -311,7 +352,7 @@ export default function App() {
         payload.iceFactor = result.iceFactor
         payload.brewWater = result.brewWater
       }
-      payload.grindSize = grind || undefined
+      payload.grindSize = grind?.microns != null ? grindSummary(grind.microns, activeGrinder) : undefined
     } else {
       payload.ratio = num(waterRatio) ?? DEFAULTS.filter.waterRatio
       if (filterMethod === 'with-milk') {
@@ -374,7 +415,7 @@ export default function App() {
       }
     }
     if (brew.bloomTime) setBloomTime(brew.bloomTime)
-    if (inst === 'v60' && brew.grindSize) setGrind(brew.grindSize)
+    if (inst === 'v60' && brew.grindSize) setGrind({ format: 'clicks', microns: micronsFromSummary(brew.grindSize) })
     if (brew.waterTemp) {
       setTempOn(true)
       const t = parseFloat(brew.waterTemp)
@@ -434,13 +475,25 @@ export default function App() {
 
         {/* Page heading (desktop) */}
         <header className="mb-6 hidden md:block">
-          <h1 className="text-2xl font-bold tracking-tight">{view === 'logbook' ? 'Logbook' : 'Brew Calculator'}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{view === 'logbook' ? 'Logbook' : view === 'equipment' ? 'Equipment' : 'Brew Calculator'}</h1>
           <p className="mt-1 text-sm text-muted">
             {view === 'logbook'
               ? 'Your saved brews — filter, review, edit, or brew again.'
-              : 'Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.'}
+              : view === 'equipment'
+                ? 'Your grinders — the active one drives the calculator’s grind-size input.'
+                : 'Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.'}
           </p>
         </header>
+
+        {view === 'equipment' && (
+          <Equipment
+            grinders={grinders}
+            activeGrinderId={activeGrinderId}
+            setActiveGrinderId={setActiveGrinderId}
+            onAddGrinder={addGrinder}
+            onRemoveGrinder={removeGrinder}
+          />
+        )}
 
         {view === 'logbook' &&
           (user ? (
@@ -575,17 +628,14 @@ export default function App() {
               )}
 
               {instrument === 'v60' && (
-                <label className="block">
-                  <span className="block text-sm font-medium text-roast">Grind size <span className="font-normal text-muted">(optional)</span></span>
-                  <input
-                    type="text"
-                    value={grind}
-                    onChange={(e) => setGrind(e.target.value)}
-                    placeholder="e.g. 14 clicks · medium-fine"
-                    className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30"
-                  />
-                  <span className="mt-1 block text-xs text-muted">Your grinder’s setting — saved as a note on the brew.</span>
-                </label>
+                <GrindInput
+                  grind={grind}
+                  setGrind={setGrind}
+                  grinder={activeGrinder}
+                  grinders={grinders}
+                  setActiveGrinderId={setActiveGrinderId}
+                  onAddGrinder={addGrinder}
+                />
               )}
 
               <div>
