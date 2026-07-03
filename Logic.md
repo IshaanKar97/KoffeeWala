@@ -1,283 +1,143 @@
 # Coffee Calculator — Calculation Logic Reference
 
-> **Source of truth:** The Notion PRD governs all requirements. This file mirrors the PRD's approved calculation logic (reconciled 2026-06-19). If the two ever diverge, the PRD wins.
+> **Source of truth:** The Notion PRD governs all requirements. This file mirrors the **shipped app's** calculation logic (reconciled 2026-07-01 to Phase 2 + Phase 3). If the two ever diverge, the PRD wins.
 
-> ⚠️ **Phase 2 refresh pending.** The modes below describe the **Phase 1** model. Phase 2 (built 2026-06-26) restructured the calculator into **Instrument × Brewing Method + ice toggle**: V60 methods **1-Pour / 3-Pour / 10-Pour / Advanced** (ice as a toggle on all; bloom fixed 2×dose except Advanced); Filter **With Milk / With Water** (dilution water = dose × dilution ratio). **Filter Coffee now has NO bloom** — a single full decoction pour (client decision 2026-06-26), superseding "Mode C" below. A full Phase 2 rewrite of this file is tracked as doc debt; the authoritative formulas live in `src/lib/calculations.js` + its tests and the Phase 2 PRD §3.
-
-## Table of Contents
-
-1. [Shared Concepts](#shared-concepts)
-2. [Mode A — V60 Without Ice](#mode-a--v60-without-ice)
-3. [Mode B — V60 With Ice](#mode-b--v60-with-ice)
-4. [Mode C — South Indian Filter Coffee](#mode-c--south-indian-filter-coffee)
-5. [Worked Examples](#worked-examples)
-6. [Rounding Rules](#rounding-rules)
+The calculator is an **Instrument × Brewing Method** model.
+**Instruments:** V60 · Filter Coffee · **Mokka-Pot** (disabled "coming soon" placeholder — no calc).
 
 ---
 
-## Shared Concepts
+## Shared concepts
 
 | Term | Definition |
 |---|---|
-| **Dose** | Weight of dry ground coffee in grams (g) |
-| **Ratio / Factor** | Multiplier applied to dose to get total water. Editable per recipe; default differs by mode |
-| **Total Water** | `Dose × Ratio` |
-| **Bloom Water** | Initial small pour to saturate grounds. Default: `Dose × 2` (editable) |
-| **Bloom Time** | Seconds to rest after bloom pour. Default: `00:30` (editable) |
-| **Remaining Water** | `Total Water − Bloom Water` (or `Brew Water − Bloom Water` for ice), split equally across the mode's pours |
-| **Cumulative Reading** | Running total shown on the scale. The scale is zeroed once after the coffee is added and is **never reset** between pours. |
+| **Dose** | Weight of dry ground coffee (g). |
+| **Ratio** | Multiplier applied to dose to get total water. Editable; default differs by method. |
+| **Total Water** | `Dose × Ratio`. |
+| **Bloom Water** | Initial pour to saturate grounds (V60 only). |
+| **Target** | The water the pours are split over: **Brew water** when ice is on, otherwise **Total water**. |
+| **Cumulative Reading** | Running total shown on the scale. The scale is zeroed once after the coffee is added and **never reset** between pours. |
+
+**Rounding:** all displayed water values are whole grams; the **final pour absorbs any rounding remainder** so the cumulative total always equals the exact target. Intermediate math uses full precision. The UI shows *"Values rounded to whole grams."*
 
 ---
 
-## Mode A — V60 Without Ice
+## V60
+
+Methods: **1-Pour · 3-Pour · 10-Pour · Advanced**. Ice is a **toggle** (OFF by default) that applies to every method.
 
 ### Inputs
-
 | Input | Default |
 |---|---|
-| Coffee Dose (g) | — (required) |
-| Ratio | 16 (editable) |
-| Bloom Water (g) | `Dose × 2` (editable) |
-| Bloom Time | `00:30` (editable) |
-
-### Step-by-Step Formulas
-
-```
-Step 1 — Total Water
-  Total Water = Dose × Ratio
-
-Step 2 — Bloom Pour
-  Bloom Water = Dose × 2
-  (User may override this value)
-
-Step 3 — Remaining Water
-  Remaining = Total Water − Bloom Water
-  Each Pour  = Remaining ÷ 3   (whole-gram rounding; see Rounding Rules)
-
-Step 4 — Cumulative Scale Readings
-  After Bloom  = Bloom Water
-  After Pour 1 = Bloom Water + Pour 1
-  After Pour 2 = Bloom Water + Pour 1 + Pour 2
-  After Pour 3 = Total Water  ✓  (last pour absorbs the rounding remainder)
-```
-
-### Pour Sequence Table
-
-| Pour | Water to Add (g) | Cumulative Scale Reading (g) | Action |
-|---|---|---|---|
-| Bloom | `Bloom Water` | `Bloom Water` | Wait bloom time before next pour |
-| Pour 1 | `Each Pour` | `Bloom + Pour1` | — |
-| Pour 2 | `Each Pour` | `Bloom + Pour1 + Pour2` | — |
-| Pour 3 | `Each Pour` | `Total Water` | Done |
-
-### Recalculation on Bloom Edit
-
-When the user changes Bloom Water:
-
-```
-Remaining  = Total Water − New Bloom Water
-Each Pour  = Remaining ÷ 3
-```
-
-All cumulative readings recalculate automatically.
-
-**Constraint:** `Bloom Water` must be `> 0` and `< Total Water`.
-
----
-
-## Mode B — V60 With Ice
-
-### Inputs
-
-Same as Mode A, plus an editable ice factor. Ice amount is always derived — never entered directly.
-
-| Input | Default |
-|---|---|
-| Coffee Dose (g) | — (required) |
-| Ratio | 16 (editable) |
-| Ice Factor | 0.4 (editable) |
-| Bloom Water (g) | `Dose × 2` (editable) |
-| Bloom Time | `00:30` (editable) |
-
-### Step-by-Step Formulas
-
-```
-Step 1 — Total Water (full recipe; stays constant)
-  Total Water = Dose × Ratio
-
-Step 2 — Ice Amount
-  Ice (g) = Total Water × Ice Factor   (default factor 0.4)
-
-Step 3 — Brew Water (hot water actually poured)
-  Brew Water = Total Water − Ice
-
-Step 4 — Bloom Pour
-  Bloom Water = Dose × 2
-  (User may override this value)
-
-Step 5 — Remaining Brew Water
-  Remaining = Brew Water − Bloom Water
-  Each Pour  = Remaining ÷ 3   (whole-gram rounding; see Rounding Rules)
-
-Step 6 — Cumulative Scale Readings
-  (Scale tracks hot water only — ice is placed in the vessel beforehand)
-  After Bloom  = Bloom Water
-  After Pour 1 = Bloom Water + Pour 1
-  After Pour 2 = Bloom Water + Pour 1 + Pour 2
-  After Pour 3 = Brew Water  ✓  (last pour absorbs the rounding remainder)
-```
-
-### Pour Sequence Table
-
-| Pour | Water to Add (g) | Cumulative Scale Reading (g) | Action |
-|---|---|---|---|
-| — | Place `Ice (g)` in serving vessel | — | Before brewing begins |
-| Bloom | `Bloom Water` | `Bloom Water` | Wait bloom time |
-| Pour 1 | `Each Pour` | `Bloom + Pour1` | — |
-| Pour 2 | `Each Pour` | `Bloom + Pour1 + Pour2` | — |
-| Pour 3 | `Each Pour` | `Brew Water` | Done |
-
-### Recalculation on Bloom / Ice-Factor Edit
-
-```
-Ice        = Total Water × Ice Factor
-Brew Water = Total Water − Ice
-Remaining  = Brew Water − New Bloom Water
-Each Pour  = Remaining ÷ 3
-```
-
-**Constraints:** `Bloom Water` must be `> 0` and `< Brew Water`. The ice factor must leave `Brew Water > Bloom Water` (warn otherwise).
-
----
-
-## Mode C — South Indian Filter Coffee
-
-### Overview
-
-South Indian filter coffee uses a traditional metal drip filter and produces a **decoction (concentrate)**. There is a bloom followed by a **single main pour** — no 3-pour split and no ice mode. The decoction then drips through passively (expected total drawdown **7–10 min**). The calculator also outputs the **milk** quantity to heat and serve alongside.
-
-> **Safety:** Remove the tamper / metal disk before brewing. (Surfaced as a UI note.)
-
-### Inputs
-
-| Input | Default |
-|---|---|
-| Coffee Dose (g) | — (required) |
-| Water Ratio | 5 (editable) |
-| Milk Ratio | 3 (editable) |
-| Bloom Water (g) | `Dose × 2` (editable) |
-| Bloom Time | `00:30` (editable) |
-| Water Temp | 80–85 °C (guidance) |
+| Coffee dose (g) | — (required) |
+| Ratio | **16**, editable (1/3/10-pour; Advanced uses it too — see below) |
+| Ice toggle | OFF |
+| Ice factor | **0.4**, editable (shown when Ice is ON) |
+| Bloom water (g) | **2 × dose, fixed** for 1/3/10-pour; **editable only in Advanced** |
+| Number of pours | 1 / 3 / 10 by method; **user-set in Advanced** |
+| Total water (g) | Advanced only, optional — **overrides the ratio when entered** |
+| Bloom time | `00:30` (editable, numeric min:sec) |
+| Grind size | optional, structured (see Grind size below) |
 
 ### Formulas
-
 ```
-Total Water (g) = Dose × Water Ratio
-Total Milk (g)  = Dose × Milk Ratio    (displayed quantity to serve; not poured on the scale)
+Total water   = Dose × Ratio
+  (Advanced: if a Total water is entered directly, it OVERRIDES the ratio.)
 
-Bloom Water     = Dose × 2  (editable); swirl after the bloom
-Main Pour       = Total Water − Bloom Water   (spiral from center, second swirl, lid on)
+Ice ON:  Ice        = Total × Ice factor
+         Brew water = Total − Ice
+         Target     = Brew water        (pours split the brew water)
+Ice OFF: Target     = Total
 
-Cumulative Scale Readings:
-  After Bloom = Bloom Water
-  After Main  = Total Water  ✓
-```
+Bloom water = 2 × Dose   (fixed for 1/3/10-pour; editable in Advanced)
 
-Treat **ml ≈ g** for water and milk. Milk is a served quantity only — it is not part of the cumulative scale readings.
-
-> **Dilution** (Americano / piccolo / cappuccino from the decoction) is **not** calculated in this release — deferred to Future Enhancements.
-
-### Pour Sequence Table
-
-| Step | Water to Add (g) | Cumulative Scale Reading (g) | Action |
-|---|---|---|---|
-| Bloom | `Bloom Water` | `Bloom Water` | Wait bloom time (00:30), swirl |
-| Main Pour | `Main Pour` | `Total Water` | Spiral pour, swirl, lid on |
-| — | Heat & serve `Total Milk (g)` | — | Served alongside the decoction |
-
----
-
-## Worked Examples
-
-### Example 1 — V60 Without Ice
-
-**Inputs:** Dose = 20 g, Ratio = 16, Bloom = default
-
-```
-Total Water  = 20 × 16        = 320 g
-Bloom Water  = 20 × 2         =  40 g
-Remaining    = 320 − 40       = 280 g
-Each Pour    = 280 ÷ 3        ≈  93.3 g → 93, 93, 94 (last absorbs remainder)
+Pours after bloom (N equal pours):
+  Each pour = (Target − Bloom) ÷ N   (whole grams; last pour absorbs the remainder)
+  N = 1 (1-Pour) · 3 (3-Pour) · 10 (10-Pour) · user-set (Advanced)
 
 Cumulative readings:
-  After Bloom  =  40 g
-  After Pour 1 = 133 g
-  After Pour 2 = 226 g
-  After Pour 3 = 320 g  ✓
+  After bloom  = Bloom
+  After pour i = Bloom + pour 1 + … + pour i
+  After last   = Target  ✓
+```
+
+**Constraint:** bloom must be `> 0` and `< Target` (with ice, lower the ice factor or bloom if this fails).
+
+---
+
+## Filter Coffee — South Indian decoction (**no bloom**)
+
+Methods: **With Milk · With Water**. **No bloom step** (client decision 2026-06-26): a **single full pour** of the decoction water. The decoction then drips through passively (expected drawdown **7–10 min**).
+
+> **Safety:** remove the tamper / metal disk before brewing (surfaced as a UI note). Water **80–85 °C**.
+
+### Inputs
+| Input | Default |
+|---|---|
+| Coffee dose (g) | — (required) |
+| Water ratio | **5**, editable |
+| Milk ratio | **3**, editable (With Milk) |
+| Water (dilution) ratio | **4**, editable (With Water) |
+
+### Formulas
+```
+Total (decoction) water = Dose × Water ratio      → single "Pour" (cumulative = Total)
+
+With Milk:   Milk to serve   = Dose × Milk ratio        (served alongside; not poured on the scale)
+With Water:  Dilution water  = Dose × Dilution ratio     (added to taste; not poured on the scale)
+```
+Milk / dilution are served quantities only — not part of the cumulative scale readings. Treat ml ≈ g.
+
+---
+
+## Grind size (Phase 3 — structured input)
+
+Grind is recorded in one of three interconvertible formats via the **active grinder** (managed in **Equipment → Grinders**):
+- **clicks** (default) — a per-grinder slider; converts to microns via the grinder's µm/click.
+- **grade** — Extra Fine … Extra Coarse, mapped to **200 µm bands over 0–1400 µm** (universal).
+- **microns** — 0–1400 (universal).
+
+Seeded grinders: **Timemore + Comandante** (+ custom); default **Timemore C3S** (0–950 µm over ~25 clicks ≈ 38 µm/click). Conversions are **approximate** (linear per-grinder µm/click). Grind is **not** part of the water calculation; it is stored on a brew as a readable summary + canonical microns, e.g. `Medium · ~608µm · 16 clicks (Timemore C3S)`.
+
+Optional **water temperature** (toggle, default OFF, °C) applies to all methods and is captured as a note.
+
+---
+
+## Worked examples
+
+**V60 · 3-Pour** — dose 20, ratio 16
+```
+Total 320 · Bloom 40 · Remaining 280 ÷ 3 = 93,93,94 → reads 40,133,226,320 ✓
+```
+
+**V60 · 3-Pour + Ice** — dose 20, ratio 16, ice factor 0.4
+```
+Total 320 · Ice 128 · Brew 192 · Bloom 40 · Remaining 152 ÷ 3 = 51,51,50 → reads 40,91,142,192 ✓
+```
+
+**V60 · 10-Pour** — dose 20, ratio 16
+```
+Total 320 · Bloom 40 · 280 ÷ 10 = 28 each → reads 40,68,96,…,320 ✓
+```
+
+**V60 · Advanced** — dose 20, total 300 (overrides ratio), bloom 40, N = 2
+```
+Remaining 260 ÷ 2 = 130,130 → reads 40,170,300 ✓
+```
+
+**Filter · With Milk** — dose 20, water ratio 5, milk ratio 3
+```
+Total 100 (single pour) → reads 100 ✓ · Milk to serve = 60
+```
+
+**Filter · With Water** — dose 20, water ratio 5, dilution ratio 4
+```
+Total 100 (single pour) → reads 100 ✓ · Dilution water = 80
 ```
 
 ---
 
-### Example 2 — V60 Without Ice (edited bloom)
-
-**Inputs:** Dose = 20 g, Ratio = 16, Bloom = 50 g (user-edited)
-
-```
-Total Water  = 20 × 16        = 320 g
-Bloom Water  =                =  50 g  (edited)
-Remaining    = 320 − 50       = 270 g
-Each Pour    = 270 ÷ 3        =  90 g  (no remainder)
-
-Cumulative readings:
-  After Bloom  =  50 g
-  After Pour 1 = 140 g
-  After Pour 2 = 230 g
-  After Pour 3 = 320 g  ✓
-```
-
----
-
-### Example 3 — V60 With Ice
-
-**Inputs:** Dose = 20 g, Ratio = 16, Ice Factor = 0.4, Bloom = default
-
-```
-Total Water  = 20 × 16        = 320 g
-Ice          = 320 × 0.4      = 128 g
-Brew Water   = 320 − 128      = 192 g
-Bloom Water  = 20 × 2         =  40 g
-Remaining    = 192 − 40       = 152 g
-Each Pour    = 152 ÷ 3        ≈  50.7 g → 51, 51, 50 (last absorbs remainder)
-
-Cumulative readings (against Brew Water):
-  After Bloom  =  40 g
-  After Pour 1 =  91 g
-  After Pour 2 = 142 g
-  After Pour 3 = 192 g  ✓
-```
-
----
-
-### Example 4 — South Indian Filter Coffee
-
-**Inputs:** Dose = 20 g, Water Ratio = 5, Milk Ratio = 3, Bloom = default
-
-```
-Total Water  = 20 × 5         = 100 g
-Bloom Water  = 20 × 2         =  40 g
-Main Pour    = 100 − 40       =  60 g
-Total Milk   = 20 × 3         =  60 g  (heat & serve)
-
-Cumulative readings:
-  After Bloom = 40 g
-  After Main  = 100 g  ✓
-```
-
----
-
-## Rounding Rules
-
-- All displayed water values are rounded to **whole grams**.
-- For multi-pour modes (A and B), the **final pour absorbs any rounding remainder** so the cumulative total always equals the exact target (no rounding drift).
-- Intermediate calculations use full floating-point precision; only displayed values are rounded.
-- A UI note should state: *"Values rounded to whole grams."*
+## Rounding rules
+- Displayed water values are **whole grams**.
+- For multi-pour methods, the **final pour absorbs the rounding remainder** so the cumulative total equals the exact target (no drift).
+- Intermediate calculations use full precision; only displayed values are rounded.
