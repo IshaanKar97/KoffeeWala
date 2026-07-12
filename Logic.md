@@ -1,9 +1,8 @@
 # Coffee Calculator — Calculation Logic Reference
 
-> **Source of truth:** The Notion PRD governs all requirements. This file mirrors the **shipped app's** calculation logic (reconciled 2026-07-01 to Phase 2 + Phase 3). If the two ever diverge, the PRD wins.
+> **Source of truth:** The Notion PRD governs all requirements. This file mirrors the **shipped app's** calculation logic (reconciled 2026-07-13 to Phase 3 Feature #2 — see Decision #65). If the two ever diverge, the PRD wins.
 
-The calculator is an **Instrument × Brewing Method** model.
-**Instruments:** V60 · Filter Coffee · **Mokka-Pot** (disabled "coming soon" placeholder — no calc).
+The calculator is **V60-only** (Phase 3 Feature #2, 2026-07-13): Filter Coffee and Moka-Pot were retired from the instrument picker and all new-brew code paths. Existing Logbook entries that used Filter Coffee remain viewable (read-only) — their formulas are kept below for historical reference only; **no new brew can be calculated with them.**
 
 ---
 
@@ -65,7 +64,9 @@ Cumulative readings:
 
 ---
 
-## Filter Coffee — South Indian decoction (**no bloom**)
+## Filter Coffee — South Indian decoction (**RETIRED — historical reference only**)
+
+> **Retired 2026-07-13** (Phase 3 Feature #2, Decision #65): Filter Coffee is no longer selectable for new brews. The formulas below are kept only so historical Logbook entries with `instrument = 'filter'` remain understandable; `calcFilter` has been removed from `calculations.js`.
 
 Methods: **With Milk · With Water**. **No bloom step** (client decision 2026-06-26): a **single full pour** of the decoction water. The decoction then drips through passively (expected drawdown **7–10 min**).
 
@@ -103,6 +104,35 @@ Optional **water temperature** (toggle, default OFF, °C) applies to all methods
 
 ---
 
+## Bean Inventory & Low-Stock Reminder (Phase 3 Feature #2)
+
+Each brew may be linked to a bean in the user's **Bean Repository** (brand, coffee name, roast date, amount in grams). Saving a brew **deducts the dose** from that bean's remaining amount; the low-stock reminder estimates when the bag will run out from **actual usage**, not a fixed assumption.
+
+### Inputs
+| Input | Source |
+|---|---|
+| Initial amount (g) | Set when the bean is added (or increased via **Replenish stock**). |
+| Remaining amount (g) | Initial amount minus every brew's dose logged against this bean, **clamped at 0** (never negative). |
+| First brew date | The `created_at` of the earliest brew logged against this bean. |
+
+### Formulas
+```
+Total used (g)      = Initial amount − Remaining amount
+Days elapsed         = max(1, days since the first brew logged against this bean)
+Avg daily usage (g)  = Total used ÷ Days elapsed
+Days remaining       = Remaining amount ÷ Avg daily usage
+                        (undefined — no reminder — if no brew has been logged
+                         against this bean yet, i.e. Total used = 0)
+
+Low-stock reminder fires when: Days remaining < 7  AND  at least one brew logged.
+```
+
+**Zero stock:** when Remaining amount reaches 0g, the bean shows a soft warning ("has reached 0g remaining — have you purchased a new bag?") with **Replenish stock** (adds grams to the same bean, increasing both Initial and Remaining by the added amount so the usage rate stays accurate) or **Add a new coffee**. The bean stays selectable for brewing — this is a warning, not a hard block.
+
+**Worked example:** a 250 g bag added 10 days ago, 130 g used so far (three brews) → avg daily usage = 130 ÷ 10 = 13 g/day → remaining 120 g ÷ 13 g/day ≈ **9.2 days remaining** (no reminder yet). After a few more days push remaining to 84 g with the same 13 g/day rate → 84 ÷ 13 ≈ **6.5 days remaining** → reminder fires.
+
+---
+
 ## Worked examples
 
 **V60 · 3-Pour** — dose 20, ratio 16
@@ -125,12 +155,12 @@ Total 320 · Bloom 40 · 280 ÷ 10 = 28 each → reads 40,68,96,…,320 ✓
 Remaining 260 ÷ 2 = 130,130 → reads 40,170,300 ✓
 ```
 
-**Filter · With Milk** — dose 20, water ratio 5, milk ratio 3
+**Filter · With Milk** (historical reference only — retired, see above) — dose 20, water ratio 5, milk ratio 3
 ```
 Total 100 (single pour) → reads 100 ✓ · Milk to serve = 60
 ```
 
-**Filter · With Water** — dose 20, water ratio 5, dilution ratio 4
+**Filter · With Water** (historical reference only — retired, see above) — dose 20, water ratio 5, dilution ratio 4
 ```
 Total 100 (single pour) → reads 100 ✓ · Dilution water = 80
 ```

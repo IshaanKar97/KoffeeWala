@@ -1,6 +1,9 @@
 // Pure calculation module for the Coffee Brewing Calculator.
 //
-// Phase 2 (Instrument × Brewing Method). Mirrors Logic.md + the Phase 2 PRD §3:
+// Phase 3 Feature #2 (2026-07-13): V60-only. Filter Coffee and Moka-Pot were
+// retired from the calculator (Decision #65) — calcFilter was removed here;
+// historical Logbook entries that used Filter Coffee keep their stored values
+// and display fine, they just can't be recalculated. Mirrors Logic.md:
 //   - All displayed water values are whole grams.
 //   - For multi-pour methods, the FINAL pour absorbs the rounding remainder so
 //     the cumulative total always equals the exact target (no rounding drift).
@@ -8,12 +11,9 @@
 //     values are CUMULATIVE scale readings.
 //
 // Instruments: 'v60' (methods 1-pour / 3-pour / 10-pour / advanced; ice toggle)
-//              'filter' (methods with-milk / with-water)
-//              'mokka' is a "coming soon" placeholder — no calc here.
 
 export const DEFAULTS = {
   v60: { ratio: 16, iceFactor: 0.4, bloomTime: '00:30' },
-  filter: { waterRatio: 5, milkRatio: 3, dilutionRatio: 4, bloomTime: '00:30', waterTempC: '80–85' },
 }
 
 // Fixed pour counts for the preset V60 methods; Advanced supplies its own N.
@@ -125,53 +125,11 @@ export function calcV60({
   }
 }
 
-/**
- * Filter Coffee — South Indian decoction. No bloom (client decision 2026-06-26):
- * a single pour of the full decoction water (dose × water ratio).
- *
- * With Milk (Phase 1): decoction (water ratio 5) + milk to serve (milk ratio 3).
- * With Water: decoction + a water-dilution amount = dose × dilution ratio
- * (default 4, editable). Milk/dilution are served quantities, not poured on the
- * scale.
- */
-export function calcFilter({
-  method = 'with-milk',
-  dose,
-  waterRatio = DEFAULTS.filter.waterRatio,
-  milkRatio = DEFAULTS.filter.milkRatio,
-  dilutionRatio = DEFAULTS.filter.dilutionRatio,
-} = {}) {
-  const errors = []
-  const withWater = method === 'with-water'
-  if (!(dose > 0)) errors.push({ field: 'dose', message: 'Enter a coffee dose greater than 0 g.' })
-  if (!(waterRatio > 0)) errors.push({ field: 'waterRatio', message: 'Water ratio must be greater than 0.' })
-  if (withWater) {
-    if (!(dilutionRatio >= 0)) errors.push({ field: 'dilutionRatio', message: 'Water (dilution) ratio must be 0 or greater.' })
-  } else {
-    if (!(milkRatio >= 0)) errors.push({ field: 'milkRatio', message: 'Milk ratio must be 0 or greater.' })
-  }
-  if (errors.length) return { valid: false, errors }
-
-  const total = round(dose * waterRatio) // decoction water, poured in one go (no bloom)
-  const steps = [{ label: 'Pour', add: total, cumulative: total }]
-  const out = { valid: true, errors: [], instrument: 'filter', method, total, bloomWater: null, target: total, nPours: 1, steps }
-  if (withWater) {
-    out.dilutionRatio = dilutionRatio
-    out.dilutionWater = round(dose * dilutionRatio)
-  } else {
-    out.milkRatio = milkRatio
-    out.milk = round(dose * milkRatio)
-  }
-  return out
-}
-
 /** Dispatcher used by the UI: calculate({ instrument, method, ...inputs }). */
 export function calculate({ instrument, ...inputs } = {}) {
   switch (instrument) {
     case 'v60':
       return calcV60(inputs)
-    case 'filter':
-      return calcFilter(inputs)
     default:
       return { valid: false, errors: [{ field: 'instrument', message: `Unknown instrument: ${instrument}` }] }
   }

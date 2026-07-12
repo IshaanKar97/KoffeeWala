@@ -30,6 +30,7 @@ const loadPageSize = () => {
 // ---- columns -------------------------------------------------------------
 const ALL_COLUMNS = [
   { key: 'name', label: 'Recipe', width: 'minmax(112px,1.4fr)', always: true },
+  { key: 'bean', label: 'Bean', width: 'minmax(96px,1fr)' },
   { key: 'coffee', label: 'Coffee', width: '64px', align: 'right' },
   { key: 'ratio', label: 'Ratio', width: '52px', align: 'right' },
   { key: 'ice', label: 'Ice', width: '52px', align: 'right' },
@@ -44,7 +45,7 @@ const ALL_COLUMNS = [
   { key: 'dilution', label: 'Dilution', width: '64px', align: 'right' },
   { key: 'rating', label: 'Rating', width: '60px', align: 'right' },
 ]
-const DEFAULT_VISIBLE = ['name', 'coffee', 'ratio', 'ice', 'bloom', 'p1w', 'p2w', 'p3w', 'rating']
+const DEFAULT_VISIBLE = ['name', 'bean', 'coffee', 'ratio', 'ice', 'bloom', 'p1w', 'p2w', 'p3w', 'rating']
 const COMPACT_VISIBLE = ['name', 'coffee', 'rating']
 const loadColumns = () => {
   try {
@@ -73,6 +74,7 @@ function cellValue(key, b) {
   const mt = key.match(/^p(\d+)t$/)
   if (mt) { const p = b.pours && b.pours[+mt[1] - 1]; return p && p.time ? p.time : '—' }
   switch (key) {
+    case 'bean': return b.beanLabel || '—'
     case 'coffee': return b.coffee != null ? `${b.coffee} g` : '—'
     case 'ratio': return b.ratio != null ? `1:${b.ratio}` : '—'
     case 'ice': return b.withIce && b.ice != null ? `${b.ice} g` : '—'
@@ -242,6 +244,7 @@ function Row({ index, style, brews, selectedId, onSelect, columns, gridTemplate,
         </div>
         <div className="mt-1"><InstrumentBadge brew={b} /></div>
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+          {b.beanLabel && <span>{b.beanLabel}</span>}
           <span>{b.coffee != null ? `${b.coffee} g` : '—'} dose</span>
           {b.ratio != null && <span>· 1:{b.ratio}</span>}
           {b.withIce && b.ice != null && <span>· {b.ice} g ice</span>}
@@ -260,6 +263,7 @@ function brewToPayload(b) {
     milk: b.milk, milkRatio: b.milkRatio, dilutionRatio: b.dilutionRatio, dilutionWater: b.dilutionWater,
     bloomTimeStr: b.bloomTime, drawdownTime: b.drawdownTime, grindSize: b.grindSize,
     waterTemp: b.waterTemp, rating: b.rating, notes: b.notes, pours: b.pours,
+    beanId: b.beanId, beanLabel: b.beanLabel,
   }
 }
 
@@ -347,6 +351,7 @@ function Detail({ brew, onClose, onRebrew, onSaved }) {
       {!editing ? (
         <>
           <div className="mb-3 grid grid-cols-2 gap-2">
+            {brew.beanLabel && <Stat label="Bean" value={brew.beanLabel} />}
             <Stat label="Coffee" value={g(brew.coffee)} />
             <Stat label={isV60 ? 'Ratio' : 'Water ratio'} value={brew.ratio != null ? `1:${brew.ratio}` : '—'} />
             <Stat label="Total water" value={g(brew.totalWater)} />

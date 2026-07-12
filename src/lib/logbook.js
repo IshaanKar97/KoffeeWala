@@ -93,6 +93,8 @@ function brewToRow(p) {
     rating: numOrNull(p.rating),
     notes: strOrNull(p.notes),
     pours,
+    bean_id: p.beanId || null,
+    bean_label: strOrNull(p.beanLabel),
   }
 }
 
@@ -128,6 +130,8 @@ function rowToBrew(row) {
     bloomTime: row.bloom_time || '',
     drawdownTime: row.drawdown_time || '',
     pours: Array.isArray(row.pours) ? row.pours : [],
+    beanId: row.bean_id || null,
+    beanLabel: row.bean_label || '',
   }
   unpackPours(row.pours, out)
   return out
