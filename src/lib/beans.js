@@ -270,12 +270,13 @@ export async function daysRemaining(bean) {
   return bean.remaining / avgDaily
 }
 
-/** Beans with <7 days remaining (and an estimable usage rate). */
-export async function getLowStockBeans(beans) {
+/** Beans with fewer than `thresholdDays` remaining (and an estimable usage
+ *  rate). Threshold is user-configurable in Profile (default 7). */
+export async function getLowStockBeans(beans, thresholdDays = 7) {
   const out = []
   for (const bean of beans) {
     const d = await daysRemaining(bean)
-    if (d != null && d < 7) out.push({ bean, daysRemaining: d })
+    if (d != null && d < thresholdDays) out.push({ bean, daysRemaining: d })
   }
   return out
 }

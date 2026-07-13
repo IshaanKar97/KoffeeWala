@@ -6,6 +6,7 @@ import { saveBrew } from './lib/logbook.js'
 import Logbook from './components/Logbook.jsx'
 import Equipment from './components/Equipment.jsx'
 import Beans from './components/Beans.jsx'
+import Profile from './components/Profile.jsx'
 import { GrindInput } from './components/Grind.jsx'
 import { defaultGrinder, DEFAULT_GRINDER_ID, grindSummary, micronsFromSummary } from './lib/grinders.js'
 import { listBeans, deductForBrew, getLowStockBeans } from './lib/beans.js'
@@ -43,6 +44,7 @@ const NAV_ITEMS = [
   { id: 'logbook', label: 'Logbook', icon: '📖' },
   { id: 'beans', label: 'Beans', icon: '🫘' },
   { id: 'equipment', label: 'Equipment', icon: '⚙️' },
+  { id: 'profile', label: 'Profile', icon: '👤' },
 ]
 
 const num = (s) => (s == null || String(s).trim() === '' ? undefined : parseFloat(s))
@@ -115,11 +117,14 @@ export default function App() {
     listBeans().then(setBeans).catch(() => {})
   }
   useEffect(() => { refreshBeans() }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Low-stock reminder settings (configurable in Profile; per-account metadata).
+  const reminderEnabled = user?.user_metadata?.reminderEnabled !== false // default on
+  const reminderDays = Number(user?.user_metadata?.reminderDays) > 0 ? Number(user.user_metadata.reminderDays) : 7
   const beansKey = beans.map((b) => `${b.id}:${b.remaining}`).join(',')
   useEffect(() => {
-    if (!user || !beans.length) { setLowStock([]); return }
-    getLowStockBeans(beans).then(setLowStock).catch(() => {})
-  }, [user, beansKey]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!user || !beans.length || !reminderEnabled) { setLowStock([]); return }
+    getLowStockBeans(beans, reminderDays).then(setLowStock).catch(() => {})
+  }, [user, beansKey, reminderEnabled, reminderDays]) // eslint-disable-line react-hooks/exhaustive-deps
   const selectedBean = beans.find((b) => b.id === selectedBeanId) || null
 
   // Grinders (per-account via Supabase user_metadata; default = Timemore C3S).
@@ -421,7 +426,7 @@ export default function App() {
 
         {/* Page heading (desktop) */}
         <header className="mb-6 hidden md:block">
-          <h1 className="text-2xl font-bold tracking-tight">{view === 'logbook' ? 'Logbook' : view === 'equipment' ? 'Equipment' : view === 'beans' ? 'Beans' : 'Brew Calculator'}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{view === 'logbook' ? 'Logbook' : view === 'equipment' ? 'Equipment' : view === 'beans' ? 'Beans' : view === 'profile' ? 'Profile' : 'Brew Calculator'}</h1>
           <p className="mt-1 text-sm text-muted">
             {view === 'logbook'
               ? 'Your saved brews — filter, review, edit, or brew again.'
@@ -429,7 +434,9 @@ export default function App() {
                 ? 'Your grinders — the active one drives the calculator’s grind-size input.'
                 : view === 'beans'
                   ? 'Your coffee inventory — add bags, track remaining stock, get a heads-up before you run out.'
-                  : 'Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.'}
+                  : view === 'profile'
+                    ? 'Your account, reminder settings, appearance, and session.'
+                    : 'Scale-based pour targets. Tare the scale to zero after adding coffee — readings are cumulative.'}
           </p>
         </header>
 
@@ -455,6 +462,18 @@ export default function App() {
             onRemoveGrinder={removeGrinder}
           />
         )}
+
+        {view === 'profile' &&
+          (user ? (
+            <Profile />
+          ) : (
+            <section className="rounded-2xl border border-line bg-surface p-6 text-center shadow-sm">
+              <p className="text-muted">Sign in to manage your profile and settings.</p>
+              <button onClick={() => setAuthOpen(true)} className="mt-3 rounded-lg bg-espresso px-4 py-2 text-sm font-medium text-white hover:bg-espresso-700">
+                Sign in
+              </button>
+            </section>
+          ))}
 
         {view === 'beans' &&
           (user ? (

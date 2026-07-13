@@ -17,6 +17,25 @@
   --color-warnbg: #f7e3dc;      /* warning bg */
 }
 
+/* Dark theme — warm coffee-toned dark palette. Applied when
+   document.documentElement[data-theme="dark"] is set (see ThemeContext). The
+   Tailwind utilities reference these vars, so overriding them re-skins the app.
+   Unlayered + higher specificity than the @theme :root, so it wins the cascade. */
+:root[data-theme="dark"] {
+  --color-cream: #1b1714;       /* app canvas */
+  --color-surface: #241e19;     /* cards / inputs */
+  --color-surface2: #2d2620;    /* raised */
+  --color-tint: #33271d;        /* espresso accent bg */
+  --color-espresso: #cf9061;    /* primary — lightened so it reads on dark */
+  --color-espresso-700: #e0a879;/* primary hover (brightens on dark) */
+  --color-roast: #efe6da;       /* headings / body text */
+  --color-muted: #a2917f;       /* labels / captions */
+  --color-line: #3a3128;        /* hairlines / dividers */
+  --color-gold: #e1a23a;        /* rating */
+  --color-warn: #e3826a;        /* warning (lighter terracotta) */
+  --color-warnbg: #3a241d;      /* warning bg */
+}
+
 /* Soft reveal for conditionally-shown inputs (e.g. Ice factor) so toggling a
    mode does not make surrounding fields jump abruptly (UX debt D7). */
 @keyframes reveal-field {
