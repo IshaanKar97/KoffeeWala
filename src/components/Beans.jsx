@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { addBean, replenishBean, updateBeanAmounts, searchCatalogBrands, searchCatalogNames, findCatalogMatch } from '../lib/beans.js'
+import CatalogBrowser from './CatalogBrowser.jsx'
 
 // Roast levels (light → dark) for the optional bean-profile dropdown.
 const ROAST_LEVELS = ['Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark']
@@ -21,6 +22,9 @@ export function AddBeanForm({ onAdded, onClose }) {
   const [names, setNames] = useState([])
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+  // Catalog fields that aren't user-editable inputs on this form but still
+  // ride along when a match is found (Phase 3 Feature #3 — Decision #67).
+  const [matchedProfile, setMatchedProfile] = useState(null)
 
   useEffect(() => { searchCatalogBrands().then(setBrands) }, [])
   useEffect(() => { searchCatalogNames().then(setNames) }, [])
@@ -29,14 +33,18 @@ export function AddBeanForm({ onAdded, onClose }) {
   // Amount respects the user's own edits; roast level / altitude / notes fill
   // only when still blank, so the catalog never clobbers what the user typed.
   useEffect(() => {
-    if (!brand.trim() || !coffeeName.trim()) return
+    if (!brand.trim() || !coffeeName.trim()) { setMatchedProfile(null); return }
     let cancelled = false
     findCatalogMatch(brand, coffeeName).then((m) => {
-      if (cancelled || !m) return
+      if (cancelled) return
+      setMatchedProfile(m)
+      if (!m) return
       if (m.amount != null && !amountTouched) setAmount(String(m.amount))
       if (m.roastLevel) setRoastLevel((v) => v || m.roastLevel)
       if (m.altitude) setAltitude((v) => v || m.altitude)
-      if (m.tastingNotes) setNotes((v) => v || m.tastingNotes)
+      // Tasting notes now have a dedicated column (carried in matchedProfile,
+      // submitted separately below) — the free-text Notes field stays the
+      // user's own, so it's no longer auto-filled with the catalog's text.
     })
     return () => { cancelled = true }
   }, [brand, coffeeName, amountTouched])
@@ -53,6 +61,20 @@ export function AddBeanForm({ onAdded, onClose }) {
         altitude: altitude.trim(),
         roastLevel,
         notes: notes.trim(),
+        // Carry the rest of the matched catalog profile along too, so a bean
+        // added via typeahead (not the Browse Catalog quick-add) still gets
+        // roastery/origin/variety/process/tastingNotes/source recorded.
+        roastery: matchedProfile?.roastery,
+        originCountry: matchedProfile?.originCountry,
+        originRegion: matchedProfile?.originRegion,
+        originEstate: matchedProfile?.originEstate,
+        variety: matchedProfile?.variety,
+        process: matchedProfile?.process,
+        tastingNotes: matchedProfile?.tastingNotes,
+        variants: matchedProfile?.variants,
+        availability: matchedProfile?.availability,
+        sourceUrl: matchedProfile?.sourceUrl,
+        source: matchedProfile?.source,
       })
       onAdded()
     } catch (err) {
@@ -105,6 +127,17 @@ export function AddBeanForm({ onAdded, onClose }) {
           <span className="block text-xs font-medium text-muted">Notes <span className="font-normal text-muted">(optional)</span></span>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="e.g. washed, floral, blueberry" className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm outline-none focus:border-espresso focus:ring-2 focus:ring-espresso/30" />
         </label>
+        {matchedProfile && (
+          <div className="rounded-lg bg-tint px-2.5 py-2 text-xs text-roast">
+            <p className="mb-0.5 font-medium">
+              Matched in the Coffee Repository{matchedProfile.roastery ? ` — ${matchedProfile.roastery}` : ''}
+            </p>
+            <p className="text-muted">
+              {[matchedProfile.variety, matchedProfile.process, matchedProfile.originEstate, matchedProfile.originRegion].filter(Boolean).join(' · ') || 'No further profile details.'}
+            </p>
+            {matchedProfile.tastingNotes && <p className="mt-0.5 italic text-muted">"{matchedProfile.tastingNotes}"</p>}
+          </div>
+        )}
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <button type="button" onClick={onClose} className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-roast hover:border-muted">Cancel</button>
@@ -205,6 +238,7 @@ function EditAmountsForm({ bean, onDone, onClose }) {
 
 export default function Beans({ beans, onRefresh }) {
   const [addOpen, setAddOpen] = useState(false)
+  const [browseOpen, setBrowseOpen] = useState(false)
   const [replenishTarget, setReplenishTarget] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
 
@@ -212,7 +246,10 @@ export default function Beans({ beans, onRefresh }) {
     <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Beans</h2>
-        <button onClick={() => setAddOpen(true)} className="rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-white hover:bg-espresso-700">Add coffee</button>
+        <div className="flex gap-2">
+          <button onClick={() => setBrowseOpen(true)} className="rounded-lg border border-espresso/40 px-3 py-1.5 text-sm font-medium text-espresso-700 hover:bg-espresso/10">Browse Catalog</button>
+          <button onClick={() => setAddOpen(true)} className="rounded-lg bg-espresso px-3 py-1.5 text-sm font-medium text-white hover:bg-espresso-700">Add coffee</button>
+        </div>
       </div>
 
       {beans.length === 0 ? (
@@ -226,13 +263,26 @@ export default function Beans({ beans, onRefresh }) {
               <div key={b.id} className={`rounded-lg border px-3 py-2 ${empty ? 'border-espresso/40 bg-tint' : 'border-line bg-surface2'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-medium text-roast">{b.brand} — {b.coffeeName}</div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-medium text-roast">{b.brand} — {b.coffeeName}</span>
+                      {b.source === 'scraped' && (
+                        <span className="rounded bg-espresso px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white">
+                          {b.roastery || 'Sourced'}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted">Roasted {b.roastDate} · {b.remaining} g / {b.initialAmount} g remaining</div>
-                    {(b.roastLevel || b.altitude) && (
+                    {(b.roastLevel || b.altitude || b.variety || b.process) && (
                       <div className="mt-0.5 text-xs text-muted">
-                        {[b.roastLevel && `${b.roastLevel} roast`, b.altitude].filter(Boolean).join(' · ')}
+                        {[b.roastLevel && `${b.roastLevel} roast`, b.altitude, b.variety, b.process].filter(Boolean).join(' · ')}
                       </div>
                     )}
+                    {(b.originEstate || b.originRegion || b.originCountry) && (
+                      <div className="mt-0.5 text-xs text-muted">
+                        {[b.originEstate, b.originRegion, b.originCountry].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
+                    {b.tastingNotes && <div className="mt-0.5 text-xs italic text-muted">"{b.tastingNotes}"</div>}
                     {b.notes && <div className="mt-0.5 text-xs italic text-muted">“{b.notes}”</div>}
                   </div>
                   <div className="flex items-center gap-2">
@@ -258,6 +308,7 @@ export default function Beans({ beans, onRefresh }) {
       )}
 
       {addOpen && <AddBeanForm onAdded={() => { setAddOpen(false); onRefresh() }} onClose={() => setAddOpen(false)} />}
+      {browseOpen && <CatalogBrowser onAdded={() => { setBrowseOpen(false); onRefresh() }} onClose={() => setBrowseOpen(false)} />}
       {replenishTarget && (
         <ReplenishForm bean={replenishTarget} onDone={() => { setReplenishTarget(null); onRefresh() }} onClose={() => setReplenishTarget(null)} />
       )}

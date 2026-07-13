@@ -19,7 +19,42 @@ function rowToBean(row) {
     altitude: row.altitude || '',
     roastLevel: row.roast_level || '',
     notes: row.notes || '',
+    // Full catalog profile (Phase 3 Feature #3 — Decision #67), carried onto
+    // the bean when added from the Coffee Repository.
+    roastery: row.roastery || '',
+    originCountry: row.origin_country || '',
+    originRegion: row.origin_region || '',
+    originEstate: row.origin_estate || '',
+    variety: row.variety || '',
+    process: row.process || '',
+    tastingNotes: row.tasting_notes || '',
+    variants: row.variants || null,
+    availability: row.availability || '',
+    sourceUrl: row.source_url || '',
+    source: row.source || 'user',
     createdAt: row.created_at,
+  }
+}
+
+function rowToCatalogEntry(row) {
+  return {
+    id: row.id,
+    brand: row.brand,
+    coffeeName: row.coffee_name,
+    lastAmount: row.last_amount_g,
+    roastery: row.roastery || '',
+    originCountry: row.origin_country || '',
+    originRegion: row.origin_region || '',
+    originEstate: row.origin_estate || '',
+    altitude: row.altitude || '',
+    variety: row.variety || '',
+    process: row.process || '',
+    roastLevel: row.roast_level || '',
+    tastingNotes: row.tasting_notes || '',
+    variants: row.variants || null,
+    availability: row.availability || '',
+    sourceUrl: row.source_url || '',
+    source: row.source || 'user',
   }
 }
 
@@ -31,8 +66,14 @@ export async function listBeans() {
   return (data || []).map(rowToBean)
 }
 
-/** Add a new bean (a bag of coffee); also upserts the shared catalog. */
-export async function addBean({ brand, coffeeName, roastDate, amount, altitude, roastLevel, notes }) {
+/** Add a new bean (a bag of coffee); also upserts the shared catalog.
+ *  Accepts the full optional catalog profile so a bean added via manual entry
+ *  or the Add-Bean typeahead can carry it (Phase 3 Feature #3 — Decision #67). */
+export async function addBean({
+  brand, coffeeName, roastDate, amount, altitude, roastLevel, notes,
+  roastery, originCountry, originRegion, originEstate, variety, process, tastingNotes,
+  variants, availability, sourceUrl, source,
+}) {
   if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED)
   const { data, error } = await supabase
     .from('beans')
@@ -45,11 +86,56 @@ export async function addBean({ brand, coffeeName, roastDate, amount, altitude, 
       altitude: altitude || null,
       roast_level: roastLevel || null,
       notes: notes || null,
+      roastery: roastery || null,
+      origin_country: originCountry || null,
+      origin_region: originRegion || null,
+      origin_estate: originEstate || null,
+      variety: variety || null,
+      process: process || null,
+      tasting_notes: tastingNotes || null,
+      variants: variants || null,
+      availability: availability || null,
+      source_url: sourceUrl || null,
+      source: source || 'user',
     })
     .select()
     .single()
   if (error) throw new Error(error.message)
   await upsertCatalog(brand, coffeeName, amount)
+  return rowToBean(data)
+}
+
+/** Add a bean directly from a Browse-Catalog entry — the fast path (§13.3):
+ *  only Roast Date + Amount are asked; everything else carries over from the
+ *  catalog record as-is (including provenance). Does not re-touch the catalog
+ *  row (the entry already exists — no upsert needed). */
+export async function addBeanFromCatalog(entry, { roastDate, amount }) {
+  if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED)
+  const { data, error } = await supabase
+    .from('beans')
+    .insert({
+      brand: entry.brand,
+      coffee_name: entry.coffeeName,
+      roast_date: roastDate,
+      initial_amount_g: amount,
+      remaining_amount_g: amount,
+      altitude: entry.altitude || null,
+      roast_level: entry.roastLevel || null,
+      roastery: entry.roastery || null,
+      origin_country: entry.originCountry || null,
+      origin_region: entry.originRegion || null,
+      origin_estate: entry.originEstate || null,
+      variety: entry.variety || null,
+      process: entry.process || null,
+      tasting_notes: entry.tastingNotes || null,
+      variants: entry.variants || null,
+      availability: entry.availability || null,
+      source_url: entry.sourceUrl || null,
+      source: entry.source || 'user',
+    })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
   return rowToBean(data)
 }
 
@@ -108,27 +194,45 @@ export async function searchCatalogNames() {
   return [...new Set((data || []).map((r) => r.coffee_name).filter(Boolean))].sort()
 }
 
-/** Exact (case-insensitive) Brand + Coffee Name match. Returns the catalog
- *  profile so the Add-Bean form can prefill amount + roast level / altitude /
- *  notes from a scraped or user-submitted entry (Phase 3 feature #3). */
+/** Exact (case-insensitive) Brand + Coffee Name match. Returns the full catalog
+ *  profile (Phase 3 Feature #3 — Decision #67) so the Add-Bean form can prefill
+ *  everything available — amount, roast level, altitude, origin, variety,
+ *  process, tasting notes — from a scraped or user-submitted entry. */
 export async function findCatalogMatch(brand, coffeeName) {
   if (!isSupabaseConfigured || !brand?.trim() || !coffeeName?.trim()) return null
   const { data, error } = await supabase
     .from('coffee_catalog')
-    .select('brand, coffee_name, last_amount_g, roast_level, altitude, tasting_notes')
+    .select('*')
     .ilike('brand', brand.trim())
     .ilike('coffee_name', coffeeName.trim())
     .limit(1)
   if (error || !data?.length) return null
-  const r = data[0]
-  return {
-    brand: r.brand,
-    coffeeName: r.coffee_name,
-    amount: r.last_amount_g,
-    roastLevel: r.roast_level || '',
-    altitude: r.altitude || '',
-    tastingNotes: r.tasting_notes || '',
+  const entry = rowToCatalogEntry(data[0])
+  return { ...entry, amount: entry.lastAmount }
+}
+
+/** Browse/filter the shared Coffee Repository (§13.3) — every catalog entry,
+ *  scraped or user-submitted. Filters are all optional and combine with AND;
+ *  `search` matches brand, coffee name, or tasting notes (case-insensitive
+ *  substring). Ordered by roastery/brand so entries from the same source
+ *  group together. */
+export async function browseCatalog({ search, roastLevel, altitude } = {}) {
+  if (!isSupabaseConfigured) return []
+  let query = supabase.from('coffee_catalog').select('*')
+  if (roastLevel) query = query.eq('roast_level', roastLevel)
+  if (altitude?.trim()) query = query.ilike('altitude', `%${altitude.trim()}%`)
+  const { data, error } = await query.order('roastery', { ascending: true }).order('brand', { ascending: true })
+  if (error) return []
+  let rows = data || []
+  const q = search?.trim().toLowerCase()
+  if (q) {
+    rows = rows.filter((r) =>
+      r.brand?.toLowerCase().includes(q) ||
+      r.coffee_name?.toLowerCase().includes(q) ||
+      r.tasting_notes?.toLowerCase().includes(q)
+    )
   }
+  return rows.map(rowToCatalogEntry)
 }
 
 async function upsertCatalog(brand, coffeeName, amount) {
