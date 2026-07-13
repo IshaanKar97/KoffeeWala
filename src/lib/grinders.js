@@ -6,6 +6,8 @@
 // microns-per-click; conversions are approximate — the source data is itself a
 // guide, and µmPerClick is editable per grinder).
 
+import { SCRAPED_GRINDERS } from './grinders.scraped.js'
+
 export const MICRON_MIN = 0
 export const MICRON_MAX = 1400
 
@@ -22,7 +24,9 @@ export const GRADES = [
 // Seed repository — Timemore + Comandante (client scope, 2026-06-29). Timemore
 // C3S grounded from the guide (0–950µm over ~25 clicks ≈ 38µm/click); Comandante
 // ≈ 30µm/click (widely documented). Approximate; per-grinder µmPerClick editable.
-export const SEED_GRINDERS = [
+// Hand-tuned seed (Decision #63) — authoritative; the scraped subset never
+// overrides these. Phase 3 feature #3 appends the click-usable scraped grinders.
+const CURATED_GRINDERS = [
   { id: 'timemore-c3s', brand: 'Timemore', model: 'C3S', clicks: 25, umPerClick: 38 },
   { id: 'timemore-c3', brand: 'Timemore', model: 'C3', clicks: 25, umPerClick: 38 },
   { id: 'timemore-c3-esp', brand: 'Timemore', model: 'C3 ESP', clicks: 25, umPerClick: 30 },
@@ -32,6 +36,7 @@ export const SEED_GRINDERS = [
   { id: 'comandante-c60', brand: 'Comandante', model: 'C60 Baracuda', clicks: 40, umPerClick: 30 },
   { id: 'comandante-x25', brand: 'Comandante', model: 'X25 Trailmaster', clicks: 40, umPerClick: 30 },
 ]
+export const SEED_GRINDERS = [...CURATED_GRINDERS, ...SCRAPED_GRINDERS]
 export const DEFAULT_GRINDER_ID = 'timemore-c3s'
 export const GRINDER_BRANDS = [...new Set(SEED_GRINDERS.map((g) => g.brand))]
 export const defaultGrinder = () => SEED_GRINDERS.find((g) => g.id === DEFAULT_GRINDER_ID)
