@@ -440,8 +440,9 @@ export default function App() {
           </p>
         </header>
 
-        {/* Low-stock reminder (Phase 3 Feature #2, Logic.md "Bean Inventory") */}
-        {user && lowStock.length > 0 && (
+        {/* Low-stock reminder (Phase 3 Feature #2, Logic.md "Bean Inventory") —
+            shown only on the Brew calculator and Beans pages. */}
+        {user && lowStock.length > 0 && (view === 'calculator' || view === 'beans') && (
           <div className="mb-5 flex flex-wrap items-center gap-2 rounded-lg border border-espresso/40 bg-tint px-3 py-2 text-sm text-espresso-700">
             <span>⚠️</span>
             <span>
