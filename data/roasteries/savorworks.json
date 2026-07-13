@@ -1,0 +1,146 @@
+{
+  "roastery": "Savorworks Roasters",
+  "website": "https://www.savorworksroasters.com/",
+  "catalogUrl": "https://www.savorworksroasters.com/collections/coffee",
+  "scrapedAt": "2026-07-06",
+  "coffees": [
+    {
+      "name": "Fruits Bomb 2026",
+      "productUrl": "https://www.savorworksroasters.com/products/fruits-bomb",
+      "origin": {
+        "country": "India",
+        "region": "Karnataka",
+        "estate": "Ratnagiri Estate (Block: Jeri Patte)",
+        "altitude": "1350 MASL"
+      },
+      "variety": "Catuai",
+      "process": "Lab-grown cultures with sequential inoculation, anaerobic fermentation (54 hours in bio-reactors), raised bed drying (26 days)",
+      "roastLevel": "Medium Light (Roast Rite Color: 73 whole bean, 87 ground)",
+      "tastingNotes": "Grilled pineapple brightness with a touch of caramelized sweetness, umeshu-like depth from fermentation, a clear blueberry lift, and a gentle floral aroma. Body: Juicy. Aftertaste: Very Long.",
+      "variants": [
+        { "weightGrams": 250, "priceINR": 1075.00, "label": "250g (Whole Beans / Aeropress / Espresso / Pour Over / French Press / Moka Pot / Cold Brew / Channi / South Indian Filter / Turkish / Inverted Aeropress — same price all grinds)" },
+        { "weightGrams": 1000, "priceINR": 3600.00, "label": "1kg Pouch (all grind options — same price all grinds)" }
+      ],
+      "availability": "In stock (no sold-out indication; Add to Cart available)",
+      "fetchError": null
+    },
+    {
+      "name": "Vienna - Dark Roast",
+      "productUrl": "https://www.savorworksroasters.com/products/vienna-dark-roast",
+      "origin": {
+        "country": "India",
+        "region": "Karnataka and Tamil Nadu",
+        "estate": "Riverdale Estate",
+        "altitude": "1450 MASL"
+      },
+      "variety": "SLN-9 & SLN-795",
+      "process": "Mixed Fruit Fermented Naturals",
+      "roastLevel": "Dark (described on page as \"higher side of medium\")",
+      "tastingNotes": "Roasted Hazelnut, Dark Chocolate, Raisin. Acidity: Low. Body: High. Aftertaste: Long.",
+      "variants": [
+        { "weightGrams": 250, "priceINR": 630.00, "label": "250g (all grind options: Whole Beans, Aeropress, Espresso, Pour Over, French Press, Moka Pot, Cold Brew, Channi, South Indian Filter, Turkish — same price all grinds)" },
+        { "weightGrams": 1000, "priceINR": 2100.00, "label": "1kg (all grind options — same price all grinds)" }
+      ],
+      "availability": "In stock (Add to cart option available; no sold-out notice)",
+      "fetchError": null
+    },
+    {
+      "name": "Honey I'm Nuts",
+      "productUrl": "https://www.savorworksroasters.com/products/honey-im-nuts",
+      "origin": {
+        "country": "India",
+        "region": "Chikmagalur, Karnataka",
+        "estate": "Ratnagiri Estate",
+        "altitude": "1350 MASL"
+      },
+      "variety": "SLN-9 & SLN-795",
+      "process": "Anaerobic Mosto Washed — whole cherries ferment anaerobically for 24 hours, then depulped and fermented aerobically for 24 hours with fresh mucilage, washed and slow-dried for 14 days",
+      "roastLevel": "Medium (Roast Rite Color: 64 whole bean, 76 ground)",
+      "tastingNotes": "Yellow Lemon, Apricot, Fig, Jaggery. Acidity: Citric. Body: Juicy. Aftertaste: Medium.",
+      "variants": [
+        { "weightGrams": 250, "priceINR": 675.00, "label": "250g (10 grind options available — same price all grinds)" },
+        { "weightGrams": 1000, "priceINR": 2250.00, "label": "1kg (10 grind options available — same price all grinds)" }
+      ],
+      "availability": "In stock (Add to Cart button available; no sold-out indicator)",
+      "fetchError": null
+    },
+    {
+      "name": "Riverdale - Medium to Dark Roast",
+      "productUrl": "https://www.savorworksroasters.com/products/riverdale-medium-dark-roast",
+      "origin": {
+        "country": null,
+        "region": null,
+        "estate": "Riverdale Estate",
+        "altitude": "1450 MASL"
+      },
+      "variety": "SLN-9",
+      "process": "Washed",
+      "roastLevel": "Medium to Dark (described on page as \"higher side of medium\")",
+      "tastingNotes": "Gooseberry, Raisin, Toffee, Roasted Hazelnut. Acidity: Low. Body: High. Aftertaste: Long. Page notes 2026 harvest recently arrived.",
+      "variants": [
+        { "weightGrams": 250, "priceINR": 675.00, "label": "250g (grind options: Whole Beans, Aeropress, Espresso, Pour Over, French Press, Moka Pot, Cold Brew, Channi, South Indian Filter, Turkish — same price all grinds)" },
+        { "weightGrams": 1000, "priceINR": 2250.00, "label": "1kg (all grind options — same price all grinds)" }
+      ],
+      "availability": "In stock (no sold-out indicator)",
+      "fetchError": null
+    },
+    {
+      "name": "Boss's Wife - House Blend",
+      "productUrl": "https://www.savorworksroasters.com/products/bosss-wife-house-blend",
+      "origin": {
+        "country": "India",
+        "region": null,
+        "estate": "Ratnagiri Estate & Riverdale Estate",
+        "altitude": null
+      },
+      "variety": null,
+      "process": "Washed and Anaerobic Black Honey",
+      "roastLevel": "Medium",
+      "tastingNotes": "Peach, Jaggery, Roasted Almond, Dark Chocolate",
+      "variants": [
+        { "weightGrams": 250, "priceINR": 695.00, "label": "250g (Whole Beans / Aeropress / Espresso / Pour Over / French Press / Moka Pot / Cold Brew / Channi / South Indian Filter / Turkish — same price all grinds)" },
+        { "weightGrams": 1000, "priceINR": 2300.00, "label": "1kg (all grind options — same price all grinds)" }
+      ],
+      "availability": "Not explicitly stated as sold out; appears available for purchase",
+      "fetchError": null
+    },
+    {
+      "name": "Coffee Drip Kit - Nutty & Chocolaty",
+      "productUrl": "https://www.savorworksroasters.com/products/coffee-drip-kit-nutty-chocolaty-5-sachets",
+      "origin": {
+        "country": null,
+        "region": null,
+        "estate": "Riverdale Estate",
+        "altitude": null
+      },
+      "variety": null,
+      "process": null,
+      "roastLevel": "Medium dark roast",
+      "tastingNotes": "Nutty undertones and luscious chocolatey notes. FORMAT NOTE: this is a drip-bag/sachet kit, not whole bean — 5 individual sachets of 12g each (60g total per kit), 100% Specialty Arabica, nitrogen-flushed packaging, no kettles/thermometers/grinders/scales required, suitable black or with milk.",
+      "variants": [
+        { "weightGrams": 60, "priceINR": 375.00, "label": "Kit of 5 sachets x 12g (Rs. 75.00 per sachet equivalent)" }
+      ],
+      "availability": "Not explicitly stated; product appears available for purchase",
+      "fetchError": null
+    },
+    {
+      "name": "Coffee Drip Kit - Fruity and Well Balanced",
+      "productUrl": "https://www.savorworksroasters.com/products/coffee-drip-kit-fruity-and-well-balanced",
+      "origin": {
+        "country": "India",
+        "region": null,
+        "estate": "Ratnagiri Estate",
+        "altitude": null
+      },
+      "variety": null,
+      "process": null,
+      "roastLevel": "Medium roast",
+      "tastingNotes": "Fruity nuances and rich aromas, described as a delightful coffee experience that avoids bitterness, authentic natural flavors, beautifully balanced. FORMAT NOTE: this is a drip-bag/sachet kit, not whole bean — 5 individual 12g servings (60g total), 100% Specialty Arabica, nitrogen-flushed packaging, requires only hot water, no additional equipment needed. Recommended storage in a cool, dry, dark place.",
+      "variants": [
+        { "weightGrams": 60, "priceINR": 375.00, "label": "Kit of 5 sachets x 12g" }
+      ],
+      "availability": "Not explicitly stated as in stock or sold out",
+      "fetchError": null
+    }
+  ]
+}

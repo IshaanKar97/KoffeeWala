@@ -1,0 +1,107 @@
+{
+  "description": "Index of all scraped data files in this /data directory. Update this file whenever a new dataset is added.",
+  "lastUpdated": "2026-07-13",
+  "how_to_use": "Read this file first to see what data already exists before scraping or re-scraping anything.",
+  "datasets": [
+    {
+      "file": "data/grinders/honestcoffeeguide-grinders.json",
+      "type": "grinder-settings",
+      "source": "https://honestcoffeeguide.com/coffee-grind-size-chart/",
+      "count": 227,
+      "scrapedAt": "2026-07-06",
+      "notes": "Click/rotation settings per brewing method for 227 grinder models. Some models use non-numeric rotation notation preserved verbatim in each entry's notes field."
+    },
+    {
+      "file": "data/roasteries/grey-soul.json",
+      "type": "roastery-catalog",
+      "roastery": "Grey Soul Coffee",
+      "source": "https://greysoul.coffee/collections/coffee",
+      "scrapedAt": "2026-07-06"
+    },
+    {
+      "file": "data/roasteries/savorworks.json",
+      "type": "roastery-catalog",
+      "roastery": "Savorworks Roasters",
+      "source": "https://www.savorworksroasters.com/collections/coffee",
+      "scrapedAt": "2026-07-06"
+    },
+    {
+      "file": "data/roasteries/ainmane.json",
+      "type": "roastery-catalog",
+      "roastery": "Ainmane Coffee",
+      "source": "https://www.ainmane.com/coffee.html",
+      "count": 21,
+      "scrapedAt": "2026-07-13",
+      "notes": "Weight/grind-size variant pricing not exposed in static page fetch; only base prices captured."
+    },
+    {
+      "file": "data/roasteries/blue-tokai.json",
+      "type": "roastery-catalog",
+      "roastery": "Blue Tokai Coffee Roasters",
+      "source": "https://bluetokaicoffee.com/collections/roasted-and-ground-coffee-beans",
+      "count": 34,
+      "scrapedAt": "2026-07-13",
+      "notes": "Includes 5 sampler/bundle products (flagged with bundle: true) alongside 29 single-origin/blend coffees."
+    },
+    {
+      "file": "data/roasteries/devans.json",
+      "type": "roastery-catalog",
+      "roastery": "Devan's Coffee",
+      "source": "https://www.devans.in/collections/coffee",
+      "count": 27,
+      "scrapedAt": "2026-07-13",
+      "notes": "Includes 4 wholesale-size (10kg) bundle duplicates of existing products (flagged bundle: true) and 2 Nespresso-compatible capsule products, alongside 21 retail coffee products. Several products had no explicit in-stock/sold-out indicator on the page (availability: null)."
+    },
+    {
+      "file": "data/roasteries/roastery-coffee-house.json",
+      "type": "roastery-catalog",
+      "roastery": "Roastery Coffee House",
+      "source": "https://roasterycoffee.co.in/coffee-beans/",
+      "count": 16,
+      "scrapedAt": "2026-07-13",
+      "notes": "All Chikmagalur/Coorg single-estate coffees with unusually detailed processing notes (anaerobic/culture/pineapple/frozen-cherry fermentation). 500g pricing was often not separately itemized on product pages (only 250g and 1kg); left null rather than interpolated. No explicit stock-status indicator on most pages."
+    },
+    {
+      "file": "data/roasteries/fraction9.json",
+      "type": "roastery-catalog",
+      "roastery": "Fraction 9 Coffee Roasters",
+      "source": "https://www.fraction9coffee.com/collections/coffee",
+      "count": 23,
+      "scrapedAt": "2026-07-13",
+      "notes": "Excludes 3 pure promotional 'free item with purchase' listings (not real products). Includes 3 bundle products (sampler boxes, gift hamper) flagged bundle: true. Heavy on experimental microlot processing (jasmine co-ferment, rose petal fermentation, anaerobic naturals) from Chikmagalur estates; 340g/800g variant prices frequently not shown separately (percentage discount stated but base price absent) — left null."
+    },
+    {
+      "file": "data/roasteries/hermit.json",
+      "type": "roastery-catalog",
+      "roastery": "Hermit Coffee",
+      "source": "https://hermitcoffee.in/collections/all",
+      "count": 6,
+      "scrapedAt": "2026-07-13",
+      "notes": "Small catalog, every core coffee product was sold out at scrape time. Same coffees also sold as separate 'Hot/Cold Brew Bags' product listings and the site sells non-coffee equipment (grinders, espresso machine, matcha) — not included in this file."
+    },
+    {
+      "file": "data/roasteries/gandhis.json",
+      "type": "roastery-catalog",
+      "roastery": "Gandhi's Coffee",
+      "source": "https://gandhis.coffee/shop/",
+      "count": 24,
+      "scrapedAt": "2026-07-13",
+      "notes": "All Bababudangiri/Chikmagalur origin (Baarbara & Balanoor Estates) plus chicory filter-coffee blends. About half the 'Speciality Coffee' single-lot products (Anaerobic Natural, Carbonic, Dark Room Naturals, Karadykan Naturals, Kondadkan Estate, Robusta Royale, Whiskey/Rum Barrel Aged) had no description text at all on their product pages — thin content on the source site, not a scraping gap. Pricing shows one 'from' figure per product, identical across 250g/500g/1kg since no per-weight breakdown was exposed."
+    },
+    {
+      "file": "data/roasteries/coffeeverse.json",
+      "type": "roastery-catalog",
+      "roastery": "Coffeeverse",
+      "source": "https://coffeeverse.in/collections/coffee",
+      "count": 44,
+      "scrapedAt": "2026-07-13",
+      "notes": "Largest and most processing-detailed catalog scraped so far — heavily dominated by Ratnagiri Estate experimental microlots (culture process, carbonic maceration, thermal shock, nitrogen maceration, sugar/herb fermentation) with Brix and fermentation-hour data. Nearly the entire 44-product catalog was sold out at scrape time. Includes 4 instant-brew sachet products at the end. Reached via a Google share-link redirect (share.google/mnyrFEP2chLaJ30OT -> coffeeverse.in)."
+    }
+  ],
+  "pendingRoasteries": [
+    "Third Wave Coffee Roasters (thirdwavecoffeeroasters.com/collections/coffee-beans)",
+    "Bombay Island Coffee Company (bombayisland.com/collections/coffee)",
+    "Subko Coffee Roasters (subko.coffee/collections/all)",
+    "Cohoma Coffee Company (cohomacoffee.com/shop-2/)"
+  ]
+}

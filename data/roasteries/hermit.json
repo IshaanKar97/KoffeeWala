@@ -1,0 +1,81 @@
+{
+  "roastery": "Hermit Coffee",
+  "website": "https://hermitcoffee.in/",
+  "catalogUrl": "https://hermitcoffee.in/collections/all",
+  "scrapedAt": "2026-07-13",
+  "scrapeNotes": "Small catalog — every whole-bean/cold-brew product was sold out at scrape time. Site also sells the same coffees as 'Hot Brew Bags' / 'Cold Brew Bags' format under separate product URLs (e.g. /products/original-hot-brew-bags-copy) and non-coffee items (matcha, brewing equipment) — those format/equipment variants were not scraped in detail here, only the 6 core coffee products.",
+  "coffees": [
+    {
+      "name": "Sunrise Blend | 80% Arabica 20% Robusta",
+      "productUrl": "https://hermitcoffee.in/products/sunrise-blend",
+      "origin": { "country": null, "region": null, "estate": null, "altitude": null },
+      "variety": "80% Arabica / 20% Robusta",
+      "process": null,
+      "roastLevel": "Medium Dark",
+      "tastingNotes": "Good body, balanced bitterness, slight acidity, extra caffeine kick from Robusta. Roasted in small batches.",
+      "variants": [ { "weightGrams": 100, "priceINR": 275, "label": "100g" }, { "weightGrams": 250, "priceINR": null, "label": "250g (price not shown, sold out)" }, { "weightGrams": 500, "priceINR": null, "label": "500g (price not shown, sold out)" } ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Vienna Roast | 100% Arabica",
+      "productUrl": "https://hermitcoffee.in/products/vienna-roast",
+      "origin": { "country": "India", "region": "Chikmagalur (finest estates, unnamed)", "estate": null, "altitude": null },
+      "variety": "100% Arabica",
+      "process": null,
+      "roastLevel": "Dark Roast (Hermit's darkest)",
+      "tastingNotes": "Intense bitterness, bold flavor, best enjoyed with milk; full-bodied, subtle sweetness in aroma.",
+      "variants": [ { "weightGrams": 100, "priceINR": 275, "label": "100g" }, { "weightGrams": 250, "priceINR": null, "label": "250g (price not shown, sold out)" }, { "weightGrams": 500, "priceINR": null, "label": "500g (price not shown, sold out)" } ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Original Blend | 100% Arabica",
+      "productUrl": "https://hermitcoffee.in/products/original-blend",
+      "origin": { "country": "India", "region": "Chikmagalur", "estate": "Baarbara Estate", "altitude": null },
+      "variety": "100% Specialty Arabica",
+      "process": null,
+      "roastLevel": "Medium Dark",
+      "tastingNotes": "Sweet and inviting aroma, almost caramel with subtle fruity hint; smooth, balanced, comforting. Versatile for beginners or enthusiasts.",
+      "variants": [ { "weightGrams": 100, "priceINR": 275, "label": "100g" }, { "weightGrams": 250, "priceINR": null, "label": "250g (price not shown, sold out)" }, { "weightGrams": 500, "priceINR": null, "label": "500g (price not shown, sold out)" } ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Classic Cold Brew",
+      "productUrl": "https://hermitcoffee.in/products/classic-cold-brew",
+      "origin": { "country": "India", "region": null, "estate": null, "altitude": null },
+      "variety": "100% specialty-grade beans",
+      "process": null,
+      "roastLevel": null,
+      "tastingNotes": "Bold, intense, smooth, rich; nutty and chocolatey notes, mild spice, perfectly bitter without sourness.",
+      "variants": [ { "weightGrams": null, "priceINR": 300, "label": "Pack of 2 x 200ml bottles" }, { "weightGrams": null, "priceINR": null, "label": "Pack of 6 x 200ml bottles (price not shown, sold out)" } ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Whiskey Fermented Cold Brew",
+      "productUrl": "https://hermitcoffee.in/products/whiskey-fermented-cold-brew",
+      "origin": { "country": null, "region": null, "estate": null, "altitude": null },
+      "variety": "100% Arabica",
+      "process": "Fermented in whiskey barrels — green beans alternated between retired whiskey barrels and African drying beds",
+      "roastLevel": null,
+      "tastingNotes": "Smooth, velvety texture with whiskey essence; recommended over ice.",
+      "variants": [ { "weightGrams": null, "priceINR": 400, "label": "Pack of 2 x 200ml bottles" }, { "weightGrams": null, "priceINR": 400, "label": "Pack of 6 x 200ml bottles" } ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Monsoon Malabar AA | 100% Arabica",
+      "productUrl": "https://hermitcoffee.in/products/monsoon-malabar-aa",
+      "origin": { "country": "India", "region": "Malabar (implied by name)", "estate": null, "altitude": null },
+      "variety": "100% Arabica AA",
+      "process": "Monsooning — green coffees exposed to humid coastal winds",
+      "roastLevel": "Medium",
+      "tastingNotes": "Bold, mellow acidity, spicy and earthy notes.",
+      "variants": [ { "weightGrams": 250, "priceINR": 650, "label": "250g" }, { "weightGrams": 500, "priceINR": 650, "label": "500g" } ],
+      "availability": "Sold out",
+      "fetchError": null
+    }
+  ]
+}

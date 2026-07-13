@@ -108,17 +108,27 @@ export async function searchCatalogNames() {
   return [...new Set((data || []).map((r) => r.coffee_name).filter(Boolean))].sort()
 }
 
-/** Exact (case-insensitive) Brand + Coffee Name match, for amount prefill. */
+/** Exact (case-insensitive) Brand + Coffee Name match. Returns the catalog
+ *  profile so the Add-Bean form can prefill amount + roast level / altitude /
+ *  notes from a scraped or user-submitted entry (Phase 3 feature #3). */
 export async function findCatalogMatch(brand, coffeeName) {
   if (!isSupabaseConfigured || !brand?.trim() || !coffeeName?.trim()) return null
   const { data, error } = await supabase
     .from('coffee_catalog')
-    .select('brand, coffee_name, last_amount_g')
+    .select('brand, coffee_name, last_amount_g, roast_level, altitude, tasting_notes')
     .ilike('brand', brand.trim())
     .ilike('coffee_name', coffeeName.trim())
     .limit(1)
   if (error || !data?.length) return null
-  return { brand: data[0].brand, coffeeName: data[0].coffee_name, amount: data[0].last_amount_g }
+  const r = data[0]
+  return {
+    brand: r.brand,
+    coffeeName: r.coffee_name,
+    amount: r.last_amount_g,
+    roastLevel: r.roast_level || '',
+    altitude: r.altitude || '',
+    tastingNotes: r.tasting_notes || '',
+  }
 }
 
 async function upsertCatalog(brand, coffeeName, amount) {

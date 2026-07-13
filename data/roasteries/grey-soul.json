@@ -1,0 +1,217 @@
+{
+  "roastery": "Grey Soul Coffee",
+  "website": "https://greysoul.coffee/",
+  "catalogUrl": "https://greysoul.coffee/collections/coffee",
+  "scrapedAt": "2026-07-06",
+  "coffees": [
+    {
+      "name": "1615 West Giri (Light-Med)",
+      "productUrl": "https://greysoul.coffee/products/1615-light-med-roast",
+      "origin": {
+        "country": "India",
+        "region": "West Giri Hills, Chikmagalur, Karnataka",
+        "estate": "Krishnagiri Estate",
+        "altitude": "1,615 metres (approx.)"
+      },
+      "variety": "Chandragiri",
+      "process": null,
+      "roastLevel": "Light-Med Roast (low air flow, stable burner & higher development)",
+      "tastingNotes": "Fresh watermelon, orange liqueur and a tea-like hibiscus finish. Dry aroma: Red Berries & Jackfruit. Wet aroma: Red Apples & Orange. Fruit-forward & expressive with a dense, syrupy texture and rounded body.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Shevaroys Washed (Light-Med Roast)",
+      "productUrl": "https://greysoul.coffee/products/shevaroys-washed-grey-soul-coffee",
+      "origin": {
+        "country": "India",
+        "region": "Shevaroys hills, Tamil Nadu",
+        "estate": "PKC Kudiraipanjan Estate",
+        "altitude": "1400 MSL"
+      },
+      "variety": "SLN 9 & Catimor",
+      "process": "Mechanically washed with fresh stream water, soaked for 48 hours, dried for 18 days, then hulled and polished",
+      "roastLevel": "Light-Medium Roast (9-minute total roast time, variable drum speed and airflow)",
+      "tastingNotes": "Ripe tropical fruit notes of plums & Green Grapes along with Pomegranates & cacao nibs finish. Additional descriptors: green kiwi, raw honey, spearmint lift; clean, crisp profile with bright acidity and medium-heavy body. Dry aroma: Berries & Plums. Wet aroma: Plum, Figs & Grapes.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "THE YELLOW LOT",
+      "productUrl": "https://greysoul.coffee/products/the-yellow-lot-grey-soul-coffee",
+      "origin": {
+        "country": "India",
+        "region": "Chikmagalur",
+        "estate": "Ratnagiri Estate",
+        "altitude": "4450 Feet"
+      },
+      "variety": "SL9",
+      "process": "Anaerobic Fermented Naturals, hot washed followed by a rapid cold wash & eventually tumble mechanical dried at the farm",
+      "roastLevel": "Above medium with high development ratio (17% development)",
+      "tastingNotes": "Dry Aroma: Ripe Red berries. Wet Aroma: Jackfruit, Dates & milk chocolate. Cup Profile: Banana, Deep Date Sweetness along with milk chocolate and subtropical fruit finish. Deeply sweet cup, Crema Rich & Heavy Bodied with Lingering aftertaste & balanced acidity.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200 GMS" }
+      ],
+      "availability": "In stock (284 in stock)",
+      "fetchError": null
+    },
+    {
+      "name": "Pink Lemonade (Ultra-Light)",
+      "productUrl": "https://greysoul.coffee/products/pink-lemonade-ultra-light-nagaland-coffee",
+      "origin": {
+        "country": "India",
+        "region": "Tsiesema Village, Kohima, Nagaland",
+        "estate": null,
+        "altitude": "1350 MSL"
+      },
+      "variety": "Chandragiri (Arabica)",
+      "process": "Sun-Dried Anaerobic Naturals with Raised Bed Drying",
+      "roastLevel": "Ultra-Light (developed to 15-16%)",
+      "tastingNotes": "Dry Aroma: Blueberries, Pineapples & Chocolate. Pre-crust Aroma: Dried Figs & Apples. Post-crust Aroma: Jackfruit, Nuts & Dates. Cup Profile: Vibrant citrus characters, layered with orange, green grape & red apple atop a sweet base of dried fig. Sweet, lively acidity with medium-heavy body and bright aromatic lift.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 899.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Cane and Lime (Light-Med Roast)",
+      "productUrl": "https://greysoul.coffee/products/cane-lime-light-med-roast",
+      "origin": {
+        "country": "India",
+        "region": "Mallenahalli, Pandaravalli Village",
+        "estate": "Yelnoorkhan Estate",
+        "altitude": "5,300 feet above MSL"
+      },
+      "variety": "Chandragiri",
+      "process": "High altitude washed arabica dried on raised beds",
+      "roastLevel": "Light-Medium Roast (14-15% development with high airflow)",
+      "tastingNotes": "Dry Aroma: Dates & Chickoo. Pre-Crust Aroma: Cardamon, Green Grapes & Dates. Post-Crust Aroma: Chickoo, Milk Chocolate & Raisins. Cup Profile: Sweet lime & gooseberry brightness, layered over dense sugar-driven base of jaggery & sugarcane. Juicy mouthfeel with a medium body & bright, clean acidity.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "MOGRA (Light Roast)",
+      "productUrl": "https://greysoul.coffee/products/mogra-light-roast",
+      "origin": {
+        "country": "India",
+        "region": "Chikmagalur",
+        "estate": "Ratnagiri Estate",
+        "altitude": "4,450 feet"
+      },
+      "variety": "SL9",
+      "process": "Anaerobic Fermented Naturals with culture microbes & mechanical dried at the farm",
+      "roastLevel": "Light Roast (dropped with early 1st crack & 16% DTR)",
+      "tastingNotes": "Dry Aroma: Jasmine Florals, Chocolate & Grapefruit. Wet Aroma: Jasmine, Vanilla & Forest Honey. Cup Profile: Intensely sweet cup with notes of Vanilla & Sweet Lime underpinning complex floral notes of Jasmine. Heavy floral aromatics followed by a well balanced cup & deep sweetness. BRIX: 24.2. Brewing recommendation: higher water temperatures (97°C) advised due to delicate roast level.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 899.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Summer in Kodaikanal (Light Roast)",
+      "productUrl": "https://greysoul.coffee/products/kodaikanal-naturals",
+      "origin": {
+        "country": "India",
+        "region": "Perumalmalai Hills, Kodaikanal",
+        "estate": "St. Joseph Estate",
+        "altitude": "4000+ feet"
+      },
+      "variety": "Catimor, Chandragiri, and SLN9",
+      "process": "Sun-dried naturals using controlled dehydrator drying",
+      "roastLevel": "Light roast with high airflow and 14% development",
+      "tastingNotes": "Mandarin brightness & rounded body that carries a lingering tropical fruit finish. Ripe strawberries with mandarin brightness, layered over gentle tropical fruit & soft cacao finish. Sweet, vibrant cup with bright acidity, a medium-heavy body & lingering sweetness. Harvest: 2026.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Coffee Drip bags (Med Roast)",
+      "productUrl": "https://greysoul.coffee/products/ready-to-brew-coffee-drip-bags",
+      "origin": {
+        "country": "India",
+        "region": "Belur, Karnataka",
+        "estate": null,
+        "altitude": "900 MASL"
+      },
+      "variety": "Station Selection",
+      "process": "Hand picked, controlled fermentation & slow sun-dried",
+      "roastLevel": "Medium roast (208°C drop temperature, 15% DTR, 8.30 minute roast time)",
+      "tastingNotes": "Ripe Blueberries along with rich milk chocolate notes in the finish. Syrupy mouthfeel and balanced acidity. Roaster notes mention blueberry and fruit candy-like dry aroma, berry-like wet aroma, and dense blueberry notes with balanced acidity and milk chocolate finish.",
+      "variants": [
+        { "weightGrams": 96, "priceINR": 499.00, "label": "6 drip bags of 16g each (96g total)" }
+      ],
+      "availability": "In stock (1171 in stock)",
+      "fetchError": null
+    },
+    {
+      "name": "Raspberry in Loop",
+      "productUrl": "https://greysoul.coffee/products/raspberry-in-loop",
+      "origin": {
+        "country": "India",
+        "region": "Chikmagalur, Karnataka",
+        "estate": null,
+        "altitude": "4,180 ft"
+      },
+      "variety": "Sl795 & Chandragiri",
+      "process": "Anaerobic fermentation done in 3 stages for 72 hours, 48 hours and 24 hours consecutively, eventually sun-dried on raised beds",
+      "roastLevel": "Medium roast with high development time ratio",
+      "tastingNotes": "Dry Aroma: Pineapple, Mandarin & Cacao. Wet Aroma: Prune & Chocolate. Cup Profile: Natural lot with rich & ripe character of Raspberry backed up by round milk chocolate contrasted with a crisp & sweet mandarin acidity. Heavy bodied with deep rich tart sweetness. BRIX: 22. Part of \"#2 Series - Roasters Art\".",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200 GMS" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    },
+    {
+      "name": "Roasters Espresso (Med Roast)",
+      "productUrl": "https://greysoul.coffee/products/roasters-espresso-med-dark-profile",
+      "origin": {
+        "country": "India",
+        "region": "Chikmagalur, Karnataka",
+        "estate": null,
+        "altitude": "3800-4100 feet"
+      },
+      "variety": "Selection 5B, 9 & Chandragiri",
+      "process": null,
+      "roastLevel": "Medium Roast (\"Slightly above Med Roast\"); Low Temperature Fed with High DTR & Extended Maillard Phase; 10-minute roast duration on Probat VFD; 18% Development Ratio",
+      "tastingNotes": "Dry Aroma: Hazelnut, Cacao & Dates. Wet Aroma: Almond, Berry Jam & Milk Chocolate. Sensory Evaluation: Almonds, Chocolate buttercream and Deep Sweetness from Ripe Red berries. Lower acidity, Well rounded Heavy Body with a base of sweet & creamy milk chocolate. Also referred to as \"Roasters Art | Roasters Espresso 3.0\".",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200g" }
+      ],
+      "availability": "Sold out (707 listed in stock, but purchase shows Sold out)",
+      "fetchError": null
+    },
+    {
+      "name": "Strawberry in Loop (Medium Roast)",
+      "productUrl": "https://greysoul.coffee/products/strawberry-in-loop-medium-roast-grey-soul-coffee",
+      "origin": {
+        "country": "India",
+        "region": "Chikmagalur, Karnataka",
+        "estate": null,
+        "altitude": "4,500 feet"
+      },
+      "variety": "Blended Varietals",
+      "process": "Various Coffee Processing Techniques",
+      "roastLevel": "Slightly above medium roast with 15-20% development time ratio and extended Maillard phase",
+      "tastingNotes": "Dry Aroma: Red Berries, Peaches & Sugarcane. Wet Aroma: Berry Jam & Milk Chocolate. Sensory Profile: Milk Chocolate covered Strawberries with raspberry aftertaste. Fruity profile with round body and red berry finish. Serves as house blend at Grey Soul's Bandra, Mumbai location.",
+      "variants": [
+        { "weightGrams": 200, "priceINR": 799.00, "label": "200g" }
+      ],
+      "availability": "Sold out",
+      "fetchError": null
+    }
+  ]
+}

@@ -25,13 +25,18 @@ export function AddBeanForm({ onAdded, onClose }) {
   useEffect(() => { searchCatalogBrands().then(setBrands) }, [])
   useEffect(() => { searchCatalogNames().then(setNames) }, [])
 
-  // Prefill Amount on an exact Brand+Name catalog match, unless the user has
-  // already edited Amount themselves this session.
+  // Prefill from an exact Brand+Name catalog match (scraped or user entry).
+  // Amount respects the user's own edits; roast level / altitude / notes fill
+  // only when still blank, so the catalog never clobbers what the user typed.
   useEffect(() => {
-    if (!brand.trim() || !coffeeName.trim() || amountTouched) return
+    if (!brand.trim() || !coffeeName.trim()) return
     let cancelled = false
     findCatalogMatch(brand, coffeeName).then((m) => {
-      if (!cancelled && m?.amount != null) setAmount(String(m.amount))
+      if (cancelled || !m) return
+      if (m.amount != null && !amountTouched) setAmount(String(m.amount))
+      if (m.roastLevel) setRoastLevel((v) => v || m.roastLevel)
+      if (m.altitude) setAltitude((v) => v || m.altitude)
+      if (m.tastingNotes) setNotes((v) => v || m.tastingNotes)
     })
     return () => { cancelled = true }
   }, [brand, coffeeName, amountTouched])
