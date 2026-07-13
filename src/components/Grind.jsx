@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   GRADES, MICRON_MAX, SEED_GRINDERS, GRINDER_BRANDS,
   grinderLabel, clicksToMicrons, micronsToClicks, gradeFromMicrons, micronsFromGrade, makeCustomGrinder,
@@ -9,6 +9,109 @@ const FORMATS = [
   { id: 'grade', label: 'Grade' },
   { id: 'microns', label: 'Microns' },
 ]
+
+// ---- circular grinder dial (clicks) --------------------------------------
+// A rotary knob that feels like setting a grinder's adjustment ring, flanked by
+// −/+ steppers for single-click precision. Clicks map 0…maxClicks over a 270°
+// arc (90° dead zone at the bottom). Drag the knob or use the buttons/arrow keys.
+const DIAL_START = -135 // 7-o'clock
+const DIAL_SWEEP = 270
+const polar = (r, aDeg) => {
+  const a = (aDeg * Math.PI) / 180
+  return { x: 50 + r * Math.sin(a), y: 50 - r * Math.cos(a) }
+}
+const arcPath = (r, a1, a2) => {
+  const p1 = polar(r, a1)
+  const p2 = polar(r, a2)
+  const large = a2 - a1 > 180 ? 1 : 0
+  return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
+}
+
+function CircularGrindDial({ clicks, maxClicks, isSet, onChange }) {
+  const svgRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+  const max = maxClicks > 0 ? maxClicks : 40
+  const angleFor = (c) => DIAL_START + (Math.max(0, Math.min(max, c)) / max) * DIAL_SWEEP
+  const cur = angleFor(clicks)
+  const set = (c) => onChange(Math.max(0, Math.min(max, Math.round(c))))
+
+  const clicksFromPointer = (e) => {
+    const rect = svgRef.current.getBoundingClientRect()
+    const dx = e.clientX - (rect.left + rect.width / 2)
+    const dy = e.clientY - (rect.top + rect.height / 2)
+    let ang = (Math.atan2(dx, -dy) * 180) / Math.PI // degrees from top, clockwise
+    if (ang > 135) ang = 135
+    else if (ang < -135) ang = -135
+    return ((ang - DIAL_START) / DIAL_SWEEP) * max
+  }
+  const onDown = (e) => { svgRef.current.setPointerCapture(e.pointerId); setDragging(true); set(clicksFromPointer(e)) }
+  const onMove = (e) => { if (dragging) set(clicksFromPointer(e)) }
+  const onUp = (e) => { setDragging(false); try { svgRef.current.releasePointerCapture(e.pointerId) } catch { /* noop */ } }
+  const onKey = (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); set(clicks + 1) }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); set(clicks - 1) }
+  }
+
+  const ticks = []
+  for (let i = 0; i <= max; i++) {
+    const major = i % 5 === 0
+    const a = angleFor(i)
+    const o = polar(46, a)
+    const inr = polar(major ? 38 : 42, a)
+    ticks.push(<line key={i} x1={o.x} y1={o.y} x2={inr.x} y2={inr.y} style={{ stroke: i <= clicks ? 'var(--color-espresso)' : 'var(--color-line)' }} strokeWidth={major ? 1.4 : 0.7} strokeLinecap="round" />)
+  }
+  const knobEdge = polar(30, cur)
+  const knobTip = polar(15, cur)
+
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <button
+        type="button"
+        onClick={() => set(clicks - 1)}
+        disabled={clicks <= 0}
+        aria-label="Coarser (fewer clicks)"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-xl font-medium text-roast hover:border-espresso hover:text-espresso disabled:opacity-40"
+      >−</button>
+
+      <svg
+        ref={svgRef}
+        viewBox="0 0 100 100"
+        role="slider"
+        tabIndex={0}
+        aria-label="Grind size (clicks)"
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={clicks}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onKeyDown={onKey}
+        className="h-32 w-32 cursor-pointer touch-none select-none outline-none focus-visible:ring-2 focus-visible:ring-espresso/40"
+        style={{ borderRadius: '9999px' }}
+      >
+        {/* track + progress */}
+        <path d={arcPath(43, DIAL_START, DIAL_START + DIAL_SWEEP)} fill="none" style={{ stroke: 'var(--color-line)' }} strokeWidth="3" strokeLinecap="round" />
+        {isSet && <path d={arcPath(43, DIAL_START, cur)} fill="none" style={{ stroke: 'var(--color-espresso)' }} strokeWidth="3" strokeLinecap="round" />}
+        {ticks}
+        {/* knob body */}
+        <circle cx="50" cy="50" r="31" style={{ fill: 'var(--color-surface2)', stroke: 'var(--color-line)' }} strokeWidth="1.5" />
+        {/* pointer notch */}
+        <line x1={knobTip.x} y1={knobTip.y} x2={knobEdge.x} y2={knobEdge.y} style={{ stroke: 'var(--color-espresso)' }} strokeWidth="3.5" strokeLinecap="round" />
+        {/* center readout */}
+        <text x="50" y="49" textAnchor="middle" style={{ fill: 'var(--color-roast)', fontSize: '17px', fontWeight: 700 }}>{isSet ? clicks : '—'}</text>
+        <text x="50" y="61" textAnchor="middle" style={{ fill: 'var(--color-muted)', fontSize: '7px', letterSpacing: '0.08em' }}>CLICKS</text>
+      </svg>
+
+      <button
+        type="button"
+        onClick={() => set(clicks + 1)}
+        disabled={clicks >= max}
+        aria-label="Finer (more clicks)"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-xl font-medium text-roast hover:border-espresso hover:text-espresso disabled:opacity-40"
+      >+</button>
+    </div>
+  )
+}
 
 // ---- reference chart modal -----------------------------------------------
 export function GrindChartModal({ grinder, onClose }) {
@@ -166,12 +269,12 @@ export function GrindInput({ grind, setGrind, grinder, grinders, setActiveGrinde
       {/* Value control per format */}
       <div className="mt-2">
         {format === 'clicks' && (
-          <div>
-            <div className="flex items-center gap-3">
-              <input type="range" min="0" max={grinder?.clicks ?? 40} step="1" value={clicks} onChange={(e) => setMicrons(clicksToMicrons(grinder, Number(e.target.value)))} className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-line accent-espresso" />
-              <span className="w-24 text-right text-sm font-semibold tabular-nums text-roast">{microns == null ? '—' : `${clicks} clicks`}</span>
-            </div>
-          </div>
+          <CircularGrindDial
+            clicks={clicks}
+            maxClicks={grinder?.clicks ?? 40}
+            isSet={microns != null}
+            onChange={(c) => setMicrons(clicksToMicrons(grinder, c))}
+          />
         )}
         {format === 'grade' && (
           <select value={microns == null ? '' : gradeFromMicrons(microns)} onChange={(e) => setMicrons(e.target.value ? micronsFromGrade(e.target.value) : null)} className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-roast outline-none focus:border-espresso">
