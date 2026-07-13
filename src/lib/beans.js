@@ -16,6 +16,9 @@ function rowToBean(row) {
     roastDate: row.roast_date,
     initialAmount: row.initial_amount_g,
     remaining: row.remaining_amount_g,
+    altitude: row.altitude || '',
+    roastLevel: row.roast_level || '',
+    notes: row.notes || '',
     createdAt: row.created_at,
   }
 }
@@ -29,15 +32,38 @@ export async function listBeans() {
 }
 
 /** Add a new bean (a bag of coffee); also upserts the shared catalog. */
-export async function addBean({ brand, coffeeName, roastDate, amount }) {
+export async function addBean({ brand, coffeeName, roastDate, amount, altitude, roastLevel, notes }) {
   if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED)
   const { data, error } = await supabase
     .from('beans')
-    .insert({ brand, coffee_name: coffeeName, roast_date: roastDate, initial_amount_g: amount, remaining_amount_g: amount })
+    .insert({
+      brand,
+      coffee_name: coffeeName,
+      roast_date: roastDate,
+      initial_amount_g: amount,
+      remaining_amount_g: amount,
+      altitude: altitude || null,
+      roast_level: roastLevel || null,
+      notes: notes || null,
+    })
     .select()
     .single()
   if (error) throw new Error(error.message)
   await upsertCatalog(brand, coffeeName, amount)
+  return rowToBean(data)
+}
+
+/** Edit a bean's total (initial) and remaining amounts — the only user-editable
+ *  bean fields (client decision 2026-07-13). */
+export async function updateBeanAmounts(id, { initialAmount, remaining }) {
+  if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED)
+  const { data, error } = await supabase
+    .from('beans')
+    .update({ initial_amount_g: initialAmount, remaining_amount_g: remaining })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
   return rowToBean(data)
 }
 

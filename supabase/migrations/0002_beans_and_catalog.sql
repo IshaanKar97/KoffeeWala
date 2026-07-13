@@ -12,8 +12,17 @@ create table if not exists public.beans (
   coffee_name         text not null,
   roast_date          date not null,
   initial_amount_g    numeric not null check (initial_amount_g > 0),
-  remaining_amount_g  numeric not null check (remaining_amount_g >= 0)
+  remaining_amount_g  numeric not null check (remaining_amount_g >= 0),
+  altitude            text,   -- optional bean profile: growing altitude (free text, e.g. "1,800–2,100 masl")
+  roast_level         text,   -- optional bean profile: Light … Dark
+  notes               text    -- optional bean profile: free-form tasting/origin notes
 );
+
+-- Additive columns for the optional bean profile — safe to re-run if the beans
+-- table was created before these fields existed.
+alter table public.beans add column if not exists altitude    text;
+alter table public.beans add column if not exists roast_level text;
+alter table public.beans add column if not exists notes       text;
 
 create index if not exists beans_user_created_idx on public.beans (user_id, created_at desc);
 
